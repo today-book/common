@@ -1,0 +1,129 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'io.spring.dependency-management' version '1.1.7' apply false
+    id 'com.diffplug.spotless' version "6.25.0" apply false
+}
+
+allprojects {
+    group = 'org.todaybook'
+    version = '1.0.0'
+    description = 'org.todaybook.common'
+}
+
+subprojects {
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+    apply plugin: 'checkstyle'
+    apply plugin: 'com.diffplug.spotless'
+
+
+    tasks.withType(JavaCompile) {
+        options.compilerArgs += ["-parameters"]
+    }
+
+    tasks.named('test') {
+        useJUnitPlatform()
+    }
+
+    tasks.withType(Javadoc) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
+
+    tasks.withType(JavaCompile) {
+        options.debug = true
+        options.debugOptions.debugLevel = "source,lines,vars"
+        options.compilerArgs << "-parameters"
+    }
+
+    // Lint
+    checkstyle {
+        toolVersion = "12.1.2"
+        configFile = rootProject.file("config/checkstyle/checkstyle.xml")
+        showViolations = true
+    }
+
+    tasks.withType(Checkstyle) {
+        reports {
+            xml.required = false
+            html.required = true
+        }
+    }
+
+    tasks.named("check") {
+        dependsOn "checkstyleMain", "checkstyleTest"
+    }
+
+    spotless {
+        java {
+            googleJavaFormat() // Google Java 스타일 강제
+            target "src/**/*.java"
+        }
+    }
+
+    tasks.check {
+        dependsOn "spotlessCheck"
+    }
+
+    repositories {
+        mavenCentral()
+    }
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+        withSourcesJar()
+        withJavadocJar()
+    }
+
+    dependencies {
+        compileOnly 'org.projectlombok:lombok:1.18.42'
+        annotationProcessor 'org.projectlombok:lombok:1.18.42'
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+                artifactId = project.name
+
+                pom {
+                    name = "todaybook ${project.name}"
+                    description = "${project.name} module"
+                    url = "https://github.com/today-book/common"
+                }
+            }
+        }
+
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/today-book/common")
+                credentials {
+                    username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                    password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+                }
+            }
+        }
+    }
+}
+
+configure([project(":common-core"), project(":common-utils")]) {
+    dependencies {
+        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+        testImplementation 'org.assertj:assertj-core:3.27.6'
+    }
+}
+
+
+configure([project(":common-mvc")]) {
+    apply plugin: 'io.spring.dependency-management'
+
+    dependencies {
+        implementation(platform("org.springframework.boot:spring-boot-dependencies:3.5.7"))
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+}
