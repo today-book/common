@@ -2,6 +2,7 @@ package org.todaybook.commonmvc.error;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.todaybook.commoncore.error.ErrorCode;
 
 /**
@@ -42,34 +43,34 @@ import org.todaybook.commoncore.error.ErrorCode;
 public enum GlobalErrorCode implements ErrorCode {
 
   /** 잘못된 요청 형식 또는 유효하지 않은 입력으로 인해 요청을 처리할 수 없는 경우. 예: JSON 파싱 오류, 필수 파라미터 누락 */
-  BAD_REQUEST(400),
+  BAD_REQUEST(HttpStatus.BAD_REQUEST.value()),
 
   /** 입력 값 검증(Validation) 실패. 예: @Valid, @NotNull, @Email 등 제약조건 위반 */
-  VALIDATION_ERROR(400),
+  VALIDATION_ERROR(HttpStatus.BAD_REQUEST.value()),
 
   /** 요청 본문(JSON) 파싱 실패 또는 잘못된 형식일 때 발생하는 에러 코드 (400 Bad Request). */
-  INVALID_JSON(400),
+  INVALID_JSON(HttpStatus.BAD_REQUEST.value()),
 
   /** 요청 파라미터 타입 변환에 실패했을 때 발생하는 에러 코드 (400 Bad Request). */
-  TYPE_MISMATCH(400),
+  TYPE_MISMATCH(HttpStatus.BAD_REQUEST.value()),
 
   /** 인증되지 않은 사용자가 보호된 리소스에 접근하려는 경우. */
-  UNAUTHORIZED(401),
+  UNAUTHORIZED(HttpStatus.UNAUTHORIZED.value()),
 
   /** 인증은 되었지만 리소스 접근 권한이 부족한 경우. */
-  FORBIDDEN(403),
+  FORBIDDEN(HttpStatus.FORBIDDEN.value()),
 
   /** 요청한 리소스를 찾을 수 없는 경우. */
-  NOT_FOUND(404),
+  NOT_FOUND(HttpStatus.NOT_FOUND.value()),
 
   /** 지원되지 않는 HTTP 메서드 요청 시 반환되는 에러 코드 (405 Method Not Allowed). */
-  METHOD_NOT_ALLOWED(405),
+  METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED.value()),
 
   /** 요청한 URL 또는 리소스를 찾을 수 없는 경우. */
-  NO_RESOURCE_FOUND(404),
+  NO_RESOURCE_FOUND(HttpStatus.NOT_FOUND.value()),
 
   /** 서버 내부 처리 중 예상치 못한 오류가 발생한 경우. */
-  INTERNAL_SERVER_ERROR(500);
+  INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR.value());
 
   /** HTTP 상태 코드. */
   private final int status;
