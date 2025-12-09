@@ -1,4 +1,4 @@
-package org.todaybook.commonmvc.security;
+package org.todaybook.commonmvc.security.external;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.todaybook.commonmvc.security.filter.LoginFilter;
+import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
 /**
  * 공통적으로 적용할 Spring Security 보안 설정의 기반 클래스.

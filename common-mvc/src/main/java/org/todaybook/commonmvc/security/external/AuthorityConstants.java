@@ -1,4 +1,4 @@
-package org.todaybook.commonmvc.security;
+package org.todaybook.commonmvc.security.external;
 
 /**
  * Spring Security 권한(Authority) 관련 상수를 정의하는 유틸리티 클래스입니다.

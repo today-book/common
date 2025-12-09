@@ -1,4 +1,4 @@
-package org.todaybook.commonmvc.security;
+package org.todaybook.commonmvc.security.external;
 
 import java.util.Set;
 
