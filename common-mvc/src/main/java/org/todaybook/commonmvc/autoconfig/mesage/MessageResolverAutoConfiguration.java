@@ -9,6 +9,16 @@ import org.springframework.context.annotation.Bean;
 import org.todaybook.commoncore.message.MessageResolver;
 import org.todaybook.commonmvc.message.MessageSourceResolver;
 
+/**
+ * Spring {@link MessageSource} 기반 {@link MessageResolver}를 자동으로 구성하는 Auto-Configuration 클래스.
+ *
+ * <p>Servlet 기반 WebApplication 환경에서 동작하며, 애플리케이션에 {@link MessageSource}가 존재하는 경우에만 활성화됩니다.
+ *
+ * <p>이미 사용자 정의 {@link MessageResolver} 빈이 등록되어 있다면 해당 빈이 우선 적용되고, 이 자동 구성은 동작하지 않습니다.
+ *
+ * @author 김지원
+ * @since 1.1.0
+ */
 @AutoConfiguration
 @ConditionalOnClass(MessageSource.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
