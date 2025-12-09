@@ -44,29 +44,31 @@ public abstract class AbstractServiceException extends RuntimeException {
   /**
    * 에러 코드와 사용자 정의 메시지를 포함한 생성자.
    *
+   * <p>이 생성자를 통해 전달된 {@code message}는 {@link MessageResolver}를 통해 변환된 메시지보다 우선적으로 사용됩니다.
+   *
    * @param errorCode 에러 코드
-   * @param message 사용자 정의 메시지 (MessageSource 우선 적용)
-   * @param errorArgs 메시지 포맷 인자
+   * @param message 사용자 정의 메시지 (기본 메시지보다 우선 적용됨)
    */
-  public AbstractServiceException(ErrorCode errorCode, String message, Object... errorArgs) {
+  public AbstractServiceException(ErrorCode errorCode, String message) {
     super(message);
     this.errorCode = errorCode;
-    this.errorArgs = errorArgs;
+    this.errorArgs = new Object[0];
   }
 
   /**
    * 에러 코드, 메시지, 원인(cause)을 포함한 생성자.
    *
+   * <p>이 생성자를 통해 전달된 {@code message}는 {@link MessageResolver}를 통해 변환된 메시지보다 우선적으로 사용됩니다.
+   *
    * @param errorCode 에러 코드
-   * @param message 사용자 정의 메시지
+   * @param message 사용자 정의 메시지 (기본 메시지보다 우선 적용됨)
    * @param cause 발생 원인
-   * @param errorArgs 메시지 포맷 인자
    */
   public AbstractServiceException(
-      ErrorCode errorCode, String message, Throwable cause, Object... errorArgs) {
+      ErrorCode errorCode, String message, Throwable cause) {
     super(message, cause);
     this.errorCode = errorCode;
-    this.errorArgs = errorArgs;
+    this.errorArgs = new Object[0];
   }
 
   /**
