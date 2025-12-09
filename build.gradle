@@ -117,7 +117,6 @@ configure([project(":common-core"), project(":common-utils")]) {
     }
 }
 
-
 configure([project(":common-mvc")]) {
     apply plugin: 'io.spring.dependency-management'
 
