@@ -14,6 +14,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.StaticMessageSource;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.todaybook.commoncore.message.MessageResolver;
+import org.todaybook.commonmvc.autoconfig.exceptionhandler.MvcExceptionHandlerAutoConfiguration;
+import org.todaybook.commonmvc.autoconfig.mesage.MessageResolverAutoConfiguration;
 import org.todaybook.commonmvc.error.MvcExceptionHandler;
 import org.todaybook.commonmvc.message.MessageSourceResolver;
 

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
+import org.todaybook.commonmvc.autoconfig.security.NoSecurityAutoConfiguration;
 
 class NoSecurityAutoConfigurationTest {
 
