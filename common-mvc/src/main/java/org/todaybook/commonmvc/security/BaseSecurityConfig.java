@@ -1,4 +1,4 @@
-package org.todaybook.commonmvc.security.external;
+package org.todaybook.commonmvc.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.todaybook.commonmvc.error.GlobalErrorCode;
-import org.todaybook.commonmvc.security.SecurityErrorResponseWriter;
 import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
 /**
@@ -128,6 +127,7 @@ public abstract class BaseSecurityConfig {
    */
   public SecurityFilterChain build(HttpSecurity http) throws Exception {
     http.csrf(CsrfConfigurer::disable)
+        .cors(AbstractHttpConfigurer::disable)
         .addFilterBefore(loginFilterBean(), UsernamePasswordAuthenticationFilter.class)
         .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .formLogin(AbstractHttpConfigurer::disable)
