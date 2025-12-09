@@ -37,7 +37,7 @@ public class ValidationErrorParserTest {
       // given
       org.springframework.validation.FieldError f1 =
           new org.springframework.validation.FieldError(
-              "obj", "username", "jiwon", false, null, null, "invalid username");
+              "obj", "nickname", "jiwon", false, null, null, "invalid nickname");
       org.springframework.validation.FieldError f2 =
           new org.springframework.validation.FieldError(
               "obj", "age", -1, false, null, null, "age must be positive");
@@ -54,9 +54,9 @@ public class ValidationErrorParserTest {
           .hasSize(2)
           .satisfiesExactly(
               e -> {
-                assertThat(e.getField()).isEqualTo("username");
+                assertThat(e.getField()).isEqualTo("nickname");
                 assertThat(e.getValue()).isEqualTo("jiwon");
-                assertThat(e.getReason()).isEqualTo("invalid username");
+                assertThat(e.getReason()).isEqualTo("invalid nickname");
               },
               e -> {
                 assertThat(e.getField()).isEqualTo("age");
