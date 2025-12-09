@@ -19,7 +19,10 @@ import org.todaybook.commoncore.message.MessageResolver;
 
 /** MvcExceptionHandler Test. */
 @ContextConfiguration(classes = {MvcExceptionHandler.class, TestController.class})
-@WebMvcTest
+@WebMvcTest(
+    excludeAutoConfiguration = {
+      org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
+    })
 public class MvcExceptionHandlerTest {
 
   @Autowired private MockMvc mockMvc;
