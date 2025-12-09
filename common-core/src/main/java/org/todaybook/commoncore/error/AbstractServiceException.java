@@ -64,8 +64,7 @@ public abstract class AbstractServiceException extends RuntimeException {
    * @param message 사용자 정의 메시지 (기본 메시지보다 우선 적용됨)
    * @param cause 발생 원인
    */
-  public AbstractServiceException(
-      ErrorCode errorCode, String message, Throwable cause) {
+  public AbstractServiceException(ErrorCode errorCode, String message, Throwable cause) {
     super(message, cause);
     this.errorCode = errorCode;
     this.errorArgs = new Object[0];
