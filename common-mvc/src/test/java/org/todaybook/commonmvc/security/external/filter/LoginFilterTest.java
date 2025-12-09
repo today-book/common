@@ -1,4 +1,4 @@
-package org.todaybook.commonmvc.security.filter;
+package org.todaybook.commonmvc.security.external.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,8 +15,8 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.todaybook.commonmvc.security.AuthenticatedUser;
-import org.todaybook.commonmvc.security.Role;
+import org.todaybook.commonmvc.security.external.AuthenticatedUser;
+import org.todaybook.commonmvc.security.external.Role;
 
 @ExtendWith(MockitoExtension.class)
 class LoginFilterTest {

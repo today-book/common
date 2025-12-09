@@ -1,6 +1,6 @@
-package org.todaybook.commonmvc.security.filter;
+package org.todaybook.commonmvc.security.external.filter;
 
-import static org.todaybook.commonmvc.security.AuthorityConstants.ROLE_PREFIX;
+import static org.todaybook.commonmvc.security.external.AuthorityConstants.ROLE_PREFIX;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -15,9 +15,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.todaybook.commonmvc.security.AuthenticatedUser;
-import org.todaybook.commonmvc.security.HeaderAuthenticatedToken;
-import org.todaybook.commonmvc.security.Role;
+import org.todaybook.commonmvc.security.external.AuthenticatedUser;
+import org.todaybook.commonmvc.security.external.HeaderAuthenticatedToken;
+import org.todaybook.commonmvc.security.external.Role;
 
 /**
  * Gateway 또는 외부 인증 시스템에서 전달한 HTTP Header 기반 사용자 정보를 Spring Security Context에 인증된 사용자로 설정하는 필터입니다.

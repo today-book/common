@@ -1,6 +1,6 @@
-package org.todaybook.commonmvc.security;
+package org.todaybook.commonmvc.security.external;
 
-import static org.todaybook.commonmvc.security.AuthorityConstants.ROLE_PREFIX;
+import static org.todaybook.commonmvc.security.external.AuthorityConstants.ROLE_PREFIX;
 
 import java.util.Collection;
 import java.util.List;

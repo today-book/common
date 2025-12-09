@@ -13,7 +13,7 @@ import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.web.SecurityFilterChain;
-import org.todaybook.commonmvc.security.filter.LoginFilter;
+import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
 class DefaultSecurityAutoConfigurationTest {
 

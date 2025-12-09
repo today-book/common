@@ -10,8 +10,8 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.todaybook.commonmvc.security.BaseSecurityConfig;
-import org.todaybook.commonmvc.security.filter.LoginFilter;
+import org.todaybook.commonmvc.security.external.BaseSecurityConfig;
+import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
 /**
  * Spring Boot 자동 구성 기반으로 기본 보안 설정을 제공하는 Auto-Configuration 클래스.
