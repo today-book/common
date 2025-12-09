@@ -14,7 +14,8 @@ public enum Role {
   USER,
 
   /** 관리자 권한. */
-  ADMIN;
+  ADMIN,
+  PUBLIC;
 
   /**
    * 문자열 값을 {@link Role} 타입으로 변환합니다.
