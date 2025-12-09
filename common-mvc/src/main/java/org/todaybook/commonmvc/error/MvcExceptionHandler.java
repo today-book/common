@@ -186,7 +186,7 @@ public class MvcExceptionHandler {
    * 같은 고정 안내 문구를 제공한다.
    */
   @ExceptionHandler(value = NoResourceFoundException.class)
-  public ResponseEntity<ErrorResponse<Void>> handlerNoResourceFoundException(
+  public ResponseEntity<ErrorResponse<Void>> handleNoResourceFoundException(
       NoResourceFoundException e) {
     ErrorCode errorCode = GlobalErrorCode.NO_RESOURCE_FOUND;
     ErrorResponse<Void> body =
@@ -209,7 +209,7 @@ public class MvcExceptionHandler {
    * @since 1.2.0
    */
   @ExceptionHandler(value = AccessDeniedException.class)
-  public ResponseEntity<ErrorResponse<Void>> handlerAccessDeniedException(AccessDeniedException e) {
+  public ResponseEntity<ErrorResponse<Void>> handleAccessDeniedException(AccessDeniedException e) {
     ErrorCode errorCode = GlobalErrorCode.FORBIDDEN;
     ErrorResponse<Void> body =
         ErrorResponse.of(errorCode.getCode(), messageResolver.resolve(errorCode.getCode()));
