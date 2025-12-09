@@ -1,4 +1,4 @@
-package org.todaybook.commonmvc.autoconfig;
+package org.todaybook.commonmvc.autoconfig.exceptionhandler;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.todaybook.commoncore.message.MessageResolver;
+import org.todaybook.commonmvc.autoconfig.condition.NoRestControllerAdviceCondition;
 import org.todaybook.commonmvc.error.MvcExceptionHandler;
 
 /**

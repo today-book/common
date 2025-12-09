@@ -1,4 +1,4 @@
-package org.todaybook.commonmvc.autoconfig;
+package org.todaybook.commonmvc.autoconfig.security;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;

@@ -17,6 +17,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.StaticMessageSource;
 import org.springframework.security.web.SecurityFilterChain;
+import org.todaybook.commonmvc.autoconfig.mesage.MessageResolverAutoConfiguration;
+import org.todaybook.commonmvc.autoconfig.security.TodayBookSecurityAutoConfiguration;
+import org.todaybook.commonmvc.autoconfig.security.TodayBookSecurityErrorAutoConfiguration;
 import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
 class TodayBookSecurityAutoConfigurationTest {
