@@ -2,6 +2,7 @@ package org.todaybook.commonmvc.autoconfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.Filter;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -11,22 +12,25 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.StaticMessageSource;
 import org.springframework.security.web.SecurityFilterChain;
 import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
-class DefaultSecurityAutoConfigurationTest {
+class TodayBookSecurityAutoConfigurationTest {
 
   private WebApplicationContextRunner contextRunner;
 
   @BeforeEach
   void setup() {
     contextRunner =
-        new WebApplicationContextRunner()
-            .withConfiguration(
-                AutoConfigurations.of(
-                    TodayBookSecurityAutoConfiguration.class, SecurityAutoConfiguration.class))
+        new WebApplicationContextRunner().withConfiguration(
+                AutoConfigurations.of(SecurityAutoConfiguration.class,
+                    TodayBookSecurityAutoConfiguration.class, MessageResolverAutoConfiguration.class,
+                    TodayBookSecurityErrorAutoConfiguration.class))
+            .withUserConfiguration(TestInfraConfig.class)
             .withPropertyValues("todaybook.security.mvc.enabled=true");
   }
 
@@ -128,5 +132,22 @@ class DefaultSecurityAutoConfigurationTest {
     }
   }
 
-  static class CustomLoginFilter extends LoginFilter {}
+  static class CustomLoginFilter extends LoginFilter {
+
+  }
+
+  @Configuration
+  static class TestInfraConfig {
+
+    @Bean
+    ObjectMapper objectMapper() {
+      return new ObjectMapper();
+    }
+
+    @Bean
+    MessageSource messageSource() {
+      return new StaticMessageSource();
+    }
+  }
 }
+

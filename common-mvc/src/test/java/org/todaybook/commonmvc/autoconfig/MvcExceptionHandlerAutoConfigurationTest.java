@@ -2,13 +2,16 @@ package org.todaybook.commonmvc.autoconfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.StaticMessageSource;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.todaybook.commoncore.message.MessageResolver;
 import org.todaybook.commonmvc.error.MvcExceptionHandler;
@@ -23,7 +26,9 @@ public class MvcExceptionHandlerAutoConfigurationTest {
   void setup() {
     contextRunner =
         new WebApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(MvcExceptionHandlerAutoConfiguration.class));
+            .withConfiguration(AutoConfigurations.of(MvcExceptionHandlerAutoConfiguration.class,
+                MessageResolverAutoConfiguration.class))
+            .withUserConfiguration(TestInfraConfig.class);
   }
 
   @Test
@@ -46,7 +51,6 @@ public class MvcExceptionHandlerAutoConfigurationTest {
         .run(
             context -> {
               assertThat(context).doesNotHaveBean(MvcExceptionHandler.class);
-              assertThat(context).doesNotHaveBean(MessageResolver.class);
             });
   }
 
@@ -58,7 +62,6 @@ public class MvcExceptionHandlerAutoConfigurationTest {
         .run(
             context -> {
               assertThat(context).doesNotHaveBean(MvcExceptionHandler.class);
-              assertThat(context).doesNotHaveBean(MessageResolver.class);
             });
   }
 
@@ -120,6 +123,20 @@ public class MvcExceptionHandlerAutoConfigurationTest {
     @Override
     public String resolve(String code, Object... args) {
       return "custom";
+    }
+  }
+
+  @Configuration
+  static class TestInfraConfig {
+
+    @Bean
+    ObjectMapper objectMapper() {
+      return new ObjectMapper();
+    }
+
+    @Bean
+    MessageSource messageSource() {
+      return new StaticMessageSource();
     }
   }
 }
