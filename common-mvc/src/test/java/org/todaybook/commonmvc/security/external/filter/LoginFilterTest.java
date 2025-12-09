@@ -44,7 +44,7 @@ class LoginFilterTest {
   void authorized() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("X-User-Id", 12345);
-    request.addHeader("X-Nickname", "김지원");
+    request.addHeader("X-User-Nickname", "김지원");
     request.addHeader("X-User-Roles", "ROLE_ADMIN,ROLE_USER");
 
     loginFilter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
