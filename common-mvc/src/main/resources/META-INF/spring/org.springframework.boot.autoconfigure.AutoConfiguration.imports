@@ -1,2 +1,3 @@
 org.todaybook.commonmvc.autoconfig.MvcExceptionHandlerAutoConfiguration
-org.todaybook.commonmvc.autoconfig.DefaultSecurityAutoConfiguration
+org.todaybook.commonmvc.autoconfig.TodayBookSecurityAutoConfiguration
+org.todaybook.commonmvc.autoconfig.NoSecurityAutoConfiguration

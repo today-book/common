@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,34 +24,52 @@ class DefaultSecurityAutoConfigurationTest {
   void setup() {
     contextRunner =
         new WebApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(DefaultSecurityAutoConfiguration.class));
+            .withConfiguration(
+                AutoConfigurations.of(
+                    TodayBookSecurityAutoConfiguration.class, SecurityAutoConfiguration.class))
+            .withPropertyValues("todaybook.security.mvc.enabled=true");
   }
 
   @Test
-  @DisplayName("기본 조건 충족 시 LoginFilter & SecurityFilterChain 자동 등록된다")
-  void defaultAutoConfigurationWorks() {
+  @DisplayName("enabled=true 이면 TodayBook SecurityFilterChain과 LoginFilter가 자동 등록된다")
+  void registersSecurityFilterChainAndLoginFilter_whenEnabled() {
     contextRunner.run(
         context -> {
           assertThat(context).hasSingleBean(LoginFilter.class);
-          assertThat(context).hasSingleBean(SecurityFilterChain.class);
+          assertThat(context).hasBean("todayBookSecurityFilterChain");
         });
   }
 
   @Test
-  @DisplayName("enabled=false 이면 LoginFilter & SecurityFilterChain 모두 등록되지 않는다")
-  void disabledProperty() {
+  @DisplayName("PropertyValues가 없으면 TodayBook Security 자동 구성은 적용되지 않는다")
+  void doesNotRegisterSecurityBeans_withoutPropertyValues() {
+    contextRunner =
+        new WebApplicationContextRunner()
+            .withConfiguration(
+                AutoConfigurations.of(
+                    TodayBookSecurityAutoConfiguration.class, SecurityAutoConfiguration.class));
+    contextRunner.run(
+        context -> {
+          assertThat(context).doesNotHaveBean(LoginFilter.class);
+          assertThat(context).doesNotHaveBean("todayBookSecurityFilterChain");
+        });
+  }
+
+  @Test
+  @DisplayName("enabled=false 이면 TodayBook Security 자동 구성은 적용되지 않는다")
+  void doesNotRegisterSecurityBeans_whenDisabled() {
     contextRunner
         .withPropertyValues("todaybook.security.mvc.enabled=false")
         .run(
             context -> {
               assertThat(context).doesNotHaveBean(LoginFilter.class);
-              assertThat(context).doesNotHaveBean(SecurityFilterChain.class);
+              assertThat(context).doesNotHaveBean("todayBookSecurityFilterChain");
             });
   }
 
   @Test
-  @DisplayName("사용자가 SecurityFilterChain을 직접 정의하면 자동 등록되지 않는다")
-  void customSecurityFilterChainExists() {
+  @DisplayName("사용자가 SecurityFilterChain을 정의하면 TodayBook 자동 구성은 백오프된다")
+  void backsOffAutoConfiguration_whenCustomSecurityFilterChainExists() {
     contextRunner
         .withUserConfiguration(CustomSecurityFilterChainConfig.class)
         .run(
@@ -59,17 +78,13 @@ class DefaultSecurityAutoConfigurationTest {
               assertThat(context.getBean(SecurityFilterChain.class))
                   .isInstanceOf(CustomSecurityFilterChain.class);
 
-              // AutoConfiguration의 defaultSecurityFilterChain은 등록되지 않는다
-              assertThat(context)
-                  .doesNotHaveBean(
-                      DefaultSecurityAutoConfiguration.class.getName()
-                          + ".defaultSecurityFilterChain");
+              assertThat(context).doesNotHaveBean("todayBookSecurityFilterChain");
             });
   }
 
   @Test
-  @DisplayName("사용자가 LoginFilter를 직접 정의하면 기본 LoginFilter는 등록되지 않는다")
-  void customLoginFilterExists() {
+  @DisplayName("사용자가 LoginFilter를 정의하면 기본 LoginFilter는 자동 등록되지 않는다")
+  void backsOffDefaultLoginFilter_whenCustomLoginFilterExists() {
     contextRunner
         .withUserConfiguration(CustomLoginFilterConfig.class)
         .run(
@@ -77,8 +92,8 @@ class DefaultSecurityAutoConfigurationTest {
               assertThat(context).hasSingleBean(LoginFilter.class);
               assertThat(context.getBean(LoginFilter.class)).isInstanceOf(CustomLoginFilter.class);
 
-              // SecurityFilterChain은 여전히 자동 등록된다
-              assertThat(context).hasSingleBean(SecurityFilterChain.class);
+              // SecurityFilterChain은 여전히 TodayBook 자동 구성으로 등록됨
+              assertThat(context).hasBean("todayBookSecurityFilterChain");
             });
   }
 
