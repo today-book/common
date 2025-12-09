@@ -23,8 +23,7 @@ class MessageResolverAutoConfigurationTest {
   void setup() {
     contextRunner =
         new WebApplicationContextRunner()
-            .withConfiguration(
-                AutoConfigurations.of(MessageResolverAutoConfiguration.class))
+            .withConfiguration(AutoConfigurations.of(MessageResolverAutoConfiguration.class))
             .withUserConfiguration(TestInfraConfig.class);
   }
 

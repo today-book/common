@@ -11,8 +11,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.todaybook.commonmvc.security.SecurityErrorResponseWriter;
 import org.todaybook.commonmvc.security.BaseSecurityConfig;
+import org.todaybook.commonmvc.security.SecurityErrorResponseWriter;
 import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
 /**
@@ -63,17 +63,15 @@ public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
   /**
    * LoginFilter를 지연 조회하기 위한 Provider.
    *
-   * <p>Auto-Configuration 내부에서 @ConditionalOnMissingBean으로 정의된
-   * LoginFilter와 사용자 정의 LoginFilter 중 실제 사용될 Bean을
-   * 순환 참조 없이 안전하게 선택하기 위해 ObjectProvider를 사용한다.
+   * <p>Auto-Configuration 내부에서 @ConditionalOnMissingBean으로 정의된 LoginFilter와 사용자 정의 LoginFilter 중 실제
+   * 사용될 Bean을 순환 참조 없이 안전하게 선택하기 위해 ObjectProvider를 사용한다.
    */
   private final ObjectProvider<LoginFilter> loginFilterProvider;
 
   /**
    * TodayBook Security 자동 구성 클래스의 생성자.
    *
-   * <p>{@link SecurityErrorResponseWriter}는 상위 {@link BaseSecurityConfig}에서
-   * 공통 예외 응답 처리를 위해 사용되며,
+   * <p>{@link SecurityErrorResponseWriter}는 상위 {@link BaseSecurityConfig}에서 공통 예외 응답 처리를 위해 사용되며,
    * {@link LoginFilter}는 {@link ObjectProvider}를 통해 지연 주입된다.
    *
    * @param errorResponseWriter Security 예외 응답을 JSON 형태로 작성하는 Writer
@@ -82,7 +80,8 @@ public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
    * @since 1.0.0
    */
   public TodayBookSecurityAutoConfiguration(
-      SecurityErrorResponseWriter errorResponseWriter,  ObjectProvider<LoginFilter> loginFilterProvider) {
+      SecurityErrorResponseWriter errorResponseWriter,
+      ObjectProvider<LoginFilter> loginFilterProvider) {
     super(errorResponseWriter);
     this.loginFilterProvider = loginFilterProvider;
   }
