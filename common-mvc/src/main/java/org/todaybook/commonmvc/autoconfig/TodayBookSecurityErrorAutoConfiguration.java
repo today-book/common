@@ -4,14 +4,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.todaybook.commoncore.message.MessageResolver;
 import org.todaybook.commonmvc.security.SecurityErrorResponseWriter;
 
-@AutoConfiguration
+@AutoConfiguration(after = TodayBookSecurityAutoConfiguration.class)
 @ConditionalOnClass(SecurityErrorResponseWriter.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+@ConditionalOnProperty(
+    prefix = "todaybook.security.mvc",
+    name = "enabled",
+    havingValue = "true",
+    matchIfMissing = false)
 public class TodayBookSecurityErrorAutoConfiguration {
 
   @Bean
