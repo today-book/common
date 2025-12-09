@@ -5,10 +5,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.todaybook.commonmvc.security.external.BaseSecurityConfig;
 import org.todaybook.commonmvc.security.external.filter.LoginFilter;
@@ -47,18 +47,16 @@ import org.todaybook.commonmvc.security.external.filter.LoginFilter;
  * @author 김형섭
  * @since 0.4.0
  */
-@AutoConfiguration
-@EnableWebSecurity
+@AutoConfiguration(before = SecurityAutoConfiguration.class)
 @EnableMethodSecurity
 @ConditionalOnClass(SecurityFilterChain.class)
-@ConditionalOnMissingBean(SecurityFilterChain.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnProperty(
     prefix = "todaybook.security.mvc",
     name = "enabled",
     havingValue = "true",
-    matchIfMissing = true)
-public class DefaultSecurityAutoConfiguration extends BaseSecurityConfig {
+    matchIfMissing = false)
+public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
 
   /**
    * 기본 인증 필터인 {@link LoginFilter} 빈을 정의합니다.
@@ -97,7 +95,8 @@ public class DefaultSecurityAutoConfiguration extends BaseSecurityConfig {
    * @throws Exception 보안 구성 중 발생할 수 있는 예외
    */
   @Bean
-  public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+  @ConditionalOnMissingBean(SecurityFilterChain.class)
+  public SecurityFilterChain todayBookSecurityFilterChain(HttpSecurity http) throws Exception {
     return build(http);
   }
 }
