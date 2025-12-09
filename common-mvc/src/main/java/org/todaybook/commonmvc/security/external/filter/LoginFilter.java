@@ -7,6 +7,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
@@ -44,10 +46,10 @@ public class LoginFilter extends OncePerRequestFilter {
   private static final String HEADER_USER_ID = "X-User-Id";
 
   /** 사용자 닉네임 헤더 키. */
-  private static final String HEADER_NICKNAME = "X-Nickname";
+  private static final String HEADER_USER_NICKNAME = "X-User-Nickname";
 
   /** 사용자 권한 목록 헤더 키. */
-  private static final String HEADER_ROLES = "X-User-Roles";
+  private static final String HEADER_USER_ROLES = "X-User-Roles";
 
   /**
    * 요청당 한 번 실행되는 필터 로직입니다.
@@ -88,8 +90,8 @@ public class LoginFilter extends OncePerRequestFilter {
       return;
     }
 
-    String nickname = request.getHeader(HEADER_NICKNAME);
-    Set<Role> roles = parseRoles(request.getHeader(HEADER_ROLES));
+    String nickname = decodeIfPresent(request.getHeader(HEADER_USER_NICKNAME));
+    Set<Role> roles = parseRoles(request.getHeader(HEADER_USER_ROLES));
 
     AuthenticatedUser principal = new AuthenticatedUser(userId, nickname, roles);
 
@@ -124,6 +126,21 @@ public class LoginFilter extends OncePerRequestFilter {
     } catch (NumberFormatException e) {
       return null;
     }
+  }
+
+  /**
+   * 헤더 값이 존재하는 경우 URL 디코딩을 수행합니다.
+   *
+   * <p>Gateway 단에서 UTF-8 기준으로 URL 인코딩된 값을 전달하므로, 내부 서비스에서는 반드시 디코딩 과정을 거쳐야 합니다.
+   *
+   * @param value 인코딩된 헤더 값
+   * @return 디코딩된 문자열, 값이 없을 경우 {@code null}
+   */
+  private String decodeIfPresent(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    return URLDecoder.decode(value, StandardCharsets.UTF_8);
   }
 
   /**
