@@ -188,7 +188,7 @@ public class MvcExceptionHandlerTest {
 
   @Test
   @DisplayName("존재하지 않는 경로(URL) 요청 — 404 NO_RESOURCE_FOUND 반환")
-  void handlerNoResourceFoundException() throws Exception {
+  void handleNoResourceFoundException() throws Exception {
     // given
     String code = "NO_RESOURCE_FOUND";
     String message = "요청하신 리소스를 찾을 수 없습니다.";
