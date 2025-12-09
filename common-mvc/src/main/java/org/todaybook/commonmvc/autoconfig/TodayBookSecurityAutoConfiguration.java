@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.todaybook.commonmvc.security.SecurityErrorResponseWriter;
 import org.todaybook.commonmvc.security.external.BaseSecurityConfig;
 import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
@@ -58,6 +59,14 @@ import org.todaybook.commonmvc.security.external.filter.LoginFilter;
     matchIfMissing = false)
 public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
 
+  private final LoginFilter loginFilter;
+
+  public TodayBookSecurityAutoConfiguration(
+      SecurityErrorResponseWriter errorResponseWriter, LoginFilter loginFilter) {
+    super(errorResponseWriter);
+    this.loginFilter = loginFilter;
+  }
+
   /**
    * 기본 인증 필터인 {@link LoginFilter} 빈을 정의합니다.
    *
@@ -81,7 +90,7 @@ public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
    */
   @Override
   protected LoginFilter loginFilterBean() {
-    return loginFilter();
+    return loginFilter;
   }
 
   /**

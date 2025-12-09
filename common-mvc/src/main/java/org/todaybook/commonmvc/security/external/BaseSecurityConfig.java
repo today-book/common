@@ -1,6 +1,6 @@
 package org.todaybook.commonmvc.security.external;
 
-import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,6 +15,8 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.todaybook.commonmvc.error.GlobalErrorCode;
+import org.todaybook.commonmvc.security.SecurityErrorResponseWriter;
 import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
 /**
@@ -83,6 +85,7 @@ import org.todaybook.commonmvc.security.external.filter.LoginFilter;
  * @since 0.4.0
  */
 @Slf4j
+@RequiredArgsConstructor
 public abstract class BaseSecurityConfig {
 
   /**
@@ -94,6 +97,15 @@ public abstract class BaseSecurityConfig {
    * @return 인증 처리를 담당하는 {@link LoginFilter} 인스턴스
    */
   protected abstract LoginFilter loginFilterBean();
+
+  /**
+   * 인증/인가 실패(401, 403) 시 공통 에러 응답을 작성하는 Security 전용 writer.
+   *
+   * <p>GlobalErrorCode와 ErrorResponse 정책을 일관되게 적용하기 위해 BaseSecurityConfig에서 직접 주입받아 사용합니다.
+   *
+   * @since 1.1.0
+   */
+  private final SecurityErrorResponseWriter errorResponseWriter;
 
   /**
    * {@link HttpSecurity}를 사용하여 {@link SecurityFilterChain}을 구성하고 빌드합니다.
@@ -148,6 +160,10 @@ public abstract class BaseSecurityConfig {
             .requestMatchers(defaultPermitAllRequestMatchers())
             .permitAll()
 
+            // "/internal/**" 경로는 Security 레벨 인증을 생략 (네트워크 레벨 보호 전제)
+            .requestMatchers(internalPermitAllRequestMatchers())
+            .permitAll()
+
             // 그 외 모든 요청은 인증을 반드시 요구함
             .anyRequest()
             .authenticated();
@@ -172,6 +188,21 @@ public abstract class BaseSecurityConfig {
   }
 
   /**
+   * 내부용 API 경로에 대해 인증 없이 허용할 Matcher 목록을 반환한다.
+   *
+   * <p>해당 경로는 Gateway, 배치, 내부 서비스 간 호출 등 신뢰된 네트워크 환경에서 접근되는 엔드포인트를 대상으로 한다.
+   *
+   * <p>기본적으로 {@code /internal/**} 경로를 인증 없이 허용하며, 필요 시 하위 클래스에서 오버라이드하여 정책을 변경하거나 비활성화할 수 있다.
+   *
+   * @return internal API permitAll 대상 {@link RequestMatcher} 배열
+   * @author 김지원
+   * @since 1.0.0
+   */
+  protected RequestMatcher[] internalPermitAllRequestMatchers() {
+    return new RequestMatcher[] {PathPatternRequestMatcher.withDefaults().matcher("/internal/**")};
+  }
+
+  /**
    * 인증/인가 예외 처리(예: 401, 403) 동작을 커스터마이즈할 {@link Customizer}를 반환합니다.
    *
    * <p>기본 구현은 {@link #authenticationEntryPoint()}와 {@link #accessDeniedHandler()}를 사용하여 인증 실패 및 접근
@@ -189,30 +220,33 @@ public abstract class BaseSecurityConfig {
   /**
    * 인증이 필요한 요청에서 인증이 되어있지 않을 때 호출되는 {@link AuthenticationEntryPoint}를 반환합니다.
    *
-   * <p>기본 구현은 {@link HttpServletResponse#SC_UNAUTHORIZED} (401) 상태 코드를 전송합니다. 필요하면 하위 클래스에서 더 자세한
-   * 응답(예: JSON 바디, 로깅 등)을 반환하도록 오버라이드하세요.
+   * <p>기본 구현은 {@link GlobalErrorCode#UNAUTHORIZED} 에 해당하는 공통 에러 응답을 반환합니다.
+   *
+   * <p>인증 실패 응답 형식이나 로깅 전략을 변경하려면 하위 클래스에서 이 메서드를 오버라이드할 수 있습니다.
    *
    * @return 인증 실패 시 동작할 {@link AuthenticationEntryPoint}
    */
   protected AuthenticationEntryPoint authenticationEntryPoint() {
     return (req, res, e) -> {
-      log.warn("{}: {}", e.getClass().getSimpleName(), e.getMessage());
-      res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+      log.warn("UNAUTHORIZED {}: {}", e.getClass().getSimpleName(), e.getMessage());
+      errorResponseWriter.write(res, GlobalErrorCode.UNAUTHORIZED);
     };
   }
 
   /**
    * 인증은 되었지만 권한이 부족한 요청(접근 거부)에 대해 처리할 {@link AccessDeniedHandler}를 반환합니다.
    *
-   * <p>기본 구현은 {@link HttpServletResponse#SC_FORBIDDEN} (403) 상태 코드를 전송합니다. (JSON 형식 응답을 하려면
-   * 오버라이드하세요.)
+   * <p>기본 구현은 {@link GlobalErrorCode#FORBIDDEN} 에 해당하는 공통 에러 응답을 반환합니다.
+   *
+   * <p>권한 부족 응답 정책을 커스터마이즈하려면 하위 클래스에서 이 메서드를 오버라이드할 수 있습니다.
    *
    * @return 접근 거부 시 동작할 {@link AccessDeniedHandler}
    */
   protected AccessDeniedHandler accessDeniedHandler() {
     return (req, res, e) -> {
-      log.warn("{}: {}", e.getClass().getSimpleName(), e.getMessage());
-      res.sendError(HttpServletResponse.SC_FORBIDDEN);
+      log.warn("FORBIDDEN {}: {}", e.getClass().getSimpleName(), e.getMessage());
+
+      errorResponseWriter.write(res, GlobalErrorCode.FORBIDDEN);
     };
   }
 }
