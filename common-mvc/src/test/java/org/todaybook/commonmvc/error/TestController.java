@@ -134,10 +134,9 @@ public class TestController {
      *
      * @param errorCode 공통 에러 코드
      * @param message 사용자 정의 메시지 (MessageResolver 미사용)
-     * @param errorArgs 메시지 포맷용 변수들
      */
-    public TestApplicationException(ErrorCode errorCode, String message, Object... errorArgs) {
-      super(errorCode, message, errorArgs);
+    public TestApplicationException(ErrorCode errorCode, String message) {
+      super(errorCode, message);
     }
   }
 
