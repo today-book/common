@@ -4,12 +4,10 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.todaybook.commoncore.message.MessageResolver;
 import org.todaybook.commonmvc.error.MvcExceptionHandler;
-import org.todaybook.commonmvc.message.MessageSourceResolver;
 
 /**
  * MVC 환경에서 사용할 기본 {@link MvcExceptionHandler} 와 메시지 처리기({@link MessageResolver})를 자동으로 등록하는

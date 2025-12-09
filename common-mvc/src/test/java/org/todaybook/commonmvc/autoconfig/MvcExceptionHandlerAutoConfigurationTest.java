@@ -26,8 +26,10 @@ public class MvcExceptionHandlerAutoConfigurationTest {
   void setup() {
     contextRunner =
         new WebApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(MvcExceptionHandlerAutoConfiguration.class,
-                MessageResolverAutoConfiguration.class))
+            .withConfiguration(
+                AutoConfigurations.of(
+                    MvcExceptionHandlerAutoConfiguration.class,
+                    MessageResolverAutoConfiguration.class))
             .withUserConfiguration(TestInfraConfig.class);
   }
 

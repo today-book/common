@@ -26,9 +26,12 @@ class TodayBookSecurityAutoConfigurationTest {
   @BeforeEach
   void setup() {
     contextRunner =
-        new WebApplicationContextRunner().withConfiguration(
-                AutoConfigurations.of(SecurityAutoConfiguration.class,
-                    TodayBookSecurityAutoConfiguration.class, MessageResolverAutoConfiguration.class,
+        new WebApplicationContextRunner()
+            .withConfiguration(
+                AutoConfigurations.of(
+                    SecurityAutoConfiguration.class,
+                    TodayBookSecurityAutoConfiguration.class,
+                    MessageResolverAutoConfiguration.class,
                     TodayBookSecurityErrorAutoConfiguration.class))
             .withUserConfiguration(TestInfraConfig.class)
             .withPropertyValues("todaybook.security.mvc.enabled=true");
@@ -132,9 +135,7 @@ class TodayBookSecurityAutoConfigurationTest {
     }
   }
 
-  static class CustomLoginFilter extends LoginFilter {
-
-  }
+  static class CustomLoginFilter extends LoginFilter {}
 
   @Configuration
   static class TestInfraConfig {
@@ -150,4 +151,3 @@ class TodayBookSecurityAutoConfigurationTest {
     }
   }
 }
-

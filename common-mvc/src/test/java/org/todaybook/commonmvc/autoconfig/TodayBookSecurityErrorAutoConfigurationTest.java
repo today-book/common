@@ -25,9 +25,7 @@ class TodayBookSecurityErrorAutoConfigurationTest {
             .withConfiguration(
                 AutoConfigurations.of(
                     MessageResolverAutoConfiguration.class,
-                    TodayBookSecurityErrorAutoConfiguration.class
-                )
-            )
+                    TodayBookSecurityErrorAutoConfiguration.class))
             .withPropertyValues("todaybook.security.mvc.enabled=true")
             .withUserConfiguration(TestInfraConfig.class);
   }
@@ -49,9 +47,7 @@ class TodayBookSecurityErrorAutoConfigurationTest {
             .withConfiguration(
                 AutoConfigurations.of(
                     MessageResolverAutoConfiguration.class,
-                    TodayBookSecurityErrorAutoConfiguration.class
-                )
-            )
+                    TodayBookSecurityErrorAutoConfiguration.class))
             .withUserConfiguration(TestInfraConfig.class);
 
     contextRunner.run(
@@ -59,7 +55,6 @@ class TodayBookSecurityErrorAutoConfigurationTest {
           assertThat(context).doesNotHaveBean(SecurityErrorResponseWriter.class);
         });
   }
-
 
   @Configuration
   static class TestInfraConfig {
