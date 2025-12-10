@@ -2,22 +2,17 @@ package org.todaybook.commonmvc.autoconfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
-import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.support.StaticMessageSource;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.todaybook.commoncore.message.MessageResolver;
 import org.todaybook.commonmvc.autoconfig.exceptionhandler.MvcExceptionHandlerAutoConfiguration;
-import org.todaybook.commonmvc.autoconfig.mesage.MessageResolverAutoConfiguration;
 import org.todaybook.commonmvc.error.MvcExceptionHandler;
-import org.todaybook.commonmvc.message.MessageSourceResolver;
 
 /** MvcExceptionHandlerAutoConfiguration Test. */
 public class MvcExceptionHandlerAutoConfigurationTest {
@@ -28,27 +23,21 @@ public class MvcExceptionHandlerAutoConfigurationTest {
   void setup() {
     contextRunner =
         new WebApplicationContextRunner()
-            .withConfiguration(
-                AutoConfigurations.of(
-                    MvcExceptionHandlerAutoConfiguration.class,
-                    MessageResolverAutoConfiguration.class))
+            .withConfiguration(AutoConfigurations.of(MvcExceptionHandlerAutoConfiguration.class))
             .withUserConfiguration(TestInfraConfig.class);
   }
 
   @Test
-  @DisplayName("기본 조건 충족 시 MvcExceptionHandler & MessageResolver 자동 등록된다")
+  @DisplayName("기본 조건 충족 시 MvcExceptionHandler가 자동 등록된다")
   void defaultAutoConfigurationWorks() {
     contextRunner.run(
         context -> {
           assertThat(context).hasSingleBean(MvcExceptionHandler.class);
-          assertThat(context).hasSingleBean(MessageResolver.class);
-          assertThat(context.getBean(MessageResolver.class))
-              .isInstanceOf(MessageSourceResolver.class);
         });
   }
 
   @Test
-  @DisplayName("enabled=false 이면 MvcExceptionHandler & MessageResolver 모두 등록되지 않는다")
+  @DisplayName("enabled=false 이면 MvcExceptionHandler가 등록되지 않는다")
   void disabledProperty() {
     contextRunner
         .withPropertyValues("todaybook.exception.mvc.enabled=false")
@@ -82,20 +71,6 @@ public class MvcExceptionHandlerAutoConfigurationTest {
             });
   }
 
-  @Test
-  @DisplayName("사용자가 MessageResolver를 직접 정의하면 기본 MessageSourceResolver는 등록되지 않는다")
-  void customMessageResolverBeanExists() {
-    contextRunner
-        .withUserConfiguration(CustomMessageResolverConfig.class)
-        .run(
-            context -> {
-              assertThat(context).hasSingleBean(MessageResolver.class);
-              assertThat(context.getBean(MessageResolver.class))
-                  .isInstanceOf(CustomMessageResolver.class);
-              assertThat(context).hasSingleBean(MvcExceptionHandler.class);
-            });
-  }
-
   @RestControllerAdvice
   static class TestRestControllerAdvice {}
 
@@ -107,26 +82,9 @@ public class MvcExceptionHandlerAutoConfigurationTest {
     }
   }
 
-  @Configuration
-  static class CustomMessageResolverConfig {
-
-    @Bean
-    public MessageResolver messageResolver() {
-      return new CustomMessageResolver();
-    }
-  }
-
   static class CustomHandler extends MvcExceptionHandler {
     public CustomHandler() {
       super(null);
-    }
-  }
-
-  static class CustomMessageResolver implements MessageResolver {
-
-    @Override
-    public String resolve(String code, Object... args) {
-      return "custom";
     }
   }
 
@@ -134,13 +92,8 @@ public class MvcExceptionHandlerAutoConfigurationTest {
   static class TestInfraConfig {
 
     @Bean
-    ObjectMapper objectMapper() {
-      return new ObjectMapper();
-    }
-
-    @Bean
-    MessageSource messageSource() {
-      return new StaticMessageSource();
+    MessageResolver messageResolver() {
+      return (code, args) -> code;
     }
   }
 }
