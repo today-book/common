@@ -5,7 +5,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import org.todaybook.commoncore.error.ErrorResponse;
 import org.todaybook.commoncore.message.MessageResolver;
 import org.todaybook.commonmvc.error.GlobalErrorCode;
@@ -26,7 +25,6 @@ import org.todaybook.commonmvc.error.GlobalErrorCode;
  * @since 1.1.0
  */
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class SecurityErrorResponseWriter {
 

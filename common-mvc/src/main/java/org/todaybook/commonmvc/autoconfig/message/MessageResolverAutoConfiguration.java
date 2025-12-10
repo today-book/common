@@ -1,4 +1,4 @@
-package org.todaybook.commonmvc.autoconfig.mesage;
+package org.todaybook.commonmvc.autoconfig.message;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;

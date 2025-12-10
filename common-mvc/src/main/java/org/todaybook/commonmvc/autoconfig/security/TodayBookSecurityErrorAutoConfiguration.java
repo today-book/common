@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.todaybook.commoncore.message.MessageResolver;
+import org.todaybook.commonmvc.autoconfig.message.MessageResolverAutoConfiguration;
 import org.todaybook.commonmvc.security.SecurityErrorResponseWriter;
 
 /**
@@ -25,7 +26,12 @@ import org.todaybook.commonmvc.security.SecurityErrorResponseWriter;
  * @author 김지원
  * @since 1.1.0
  */
-@AutoConfiguration(after = TodayBookSecurityAutoConfiguration.class)
+@AutoConfiguration(
+    after = {
+        TodayBookSecurityAutoConfiguration.class,
+        MessageResolverAutoConfiguration.class
+    }
+)
 @ConditionalOnClass(SecurityErrorResponseWriter.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnProperty(
