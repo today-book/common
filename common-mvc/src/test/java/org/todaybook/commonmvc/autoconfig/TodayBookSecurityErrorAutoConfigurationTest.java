@@ -12,8 +12,10 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.StaticMessageSource;
-import org.todaybook.commonmvc.autoconfig.mesage.MessageResolverAutoConfiguration;
+import org.todaybook.commoncore.message.MessageResolver;
+import org.todaybook.commonmvc.autoconfig.message.MessageResolverAutoConfiguration;
 import org.todaybook.commonmvc.autoconfig.security.TodayBookSecurityErrorAutoConfiguration;
+import org.todaybook.commonmvc.message.MessageSourceResolver;
 import org.todaybook.commonmvc.security.SecurityErrorResponseWriter;
 
 class TodayBookSecurityErrorAutoConfigurationTest {
@@ -24,10 +26,7 @@ class TodayBookSecurityErrorAutoConfigurationTest {
   void setup() {
     contextRunner =
         new WebApplicationContextRunner()
-            .withConfiguration(
-                AutoConfigurations.of(
-                    MessageResolverAutoConfiguration.class,
-                    TodayBookSecurityErrorAutoConfiguration.class))
+            .withConfiguration(AutoConfigurations.of(TodayBookSecurityErrorAutoConfiguration.class))
             .withPropertyValues("todaybook.security.mvc.enabled=true")
             .withUserConfiguration(TestInfraConfig.class);
   }
@@ -69,6 +68,11 @@ class TodayBookSecurityErrorAutoConfigurationTest {
     @Bean
     MessageSource messageSource() {
       return new StaticMessageSource();
+    }
+
+    @Bean
+    MessageResolver messageResolver() {
+      return new MessageSourceResolver(messageSource());
     }
   }
 }

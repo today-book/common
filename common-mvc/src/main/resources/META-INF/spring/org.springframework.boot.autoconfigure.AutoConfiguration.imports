@@ -2,4 +2,4 @@ org.todaybook.commonmvc.autoconfig.exceptionhandler.MvcExceptionHandlerAutoConfi
 org.todaybook.commonmvc.autoconfig.security.TodayBookSecurityAutoConfiguration
 org.todaybook.commonmvc.autoconfig.security.NoSecurityAutoConfiguration
 org.todaybook.commonmvc.autoconfig.security.TodayBookSecurityErrorAutoConfiguration
-org.todaybook.commonmvc.autoconfig.mesage.MessageResolverAutoConfiguration
+org.todaybook.commonmvc.autoconfig.message.MessageResolverAutoConfiguration

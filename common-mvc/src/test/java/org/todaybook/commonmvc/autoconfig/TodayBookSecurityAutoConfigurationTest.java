@@ -17,11 +17,20 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.StaticMessageSource;
 import org.springframework.security.web.SecurityFilterChain;
-import org.todaybook.commonmvc.autoconfig.mesage.MessageResolverAutoConfiguration;
+import org.todaybook.commoncore.message.MessageResolver;
 import org.todaybook.commonmvc.autoconfig.security.TodayBookSecurityAutoConfiguration;
-import org.todaybook.commonmvc.autoconfig.security.TodayBookSecurityErrorAutoConfiguration;
+import org.todaybook.commonmvc.message.MessageSourceResolver;
+import org.todaybook.commonmvc.security.SecurityErrorResponseWriter;
 import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
+/**
+ * TodayBookSecurityAutoConfiguration Test.
+ *
+ * <p>Spring Boot Auto-Configuration 테스트 가이드에 따라 조건부 Bean 등록 및 백오프 동작만 검증한다.
+ *
+ * @author 김지원
+ * @since 1.0.0
+ */
 class TodayBookSecurityAutoConfigurationTest {
 
   private WebApplicationContextRunner contextRunner;
@@ -32,101 +41,76 @@ class TodayBookSecurityAutoConfigurationTest {
         new WebApplicationContextRunner()
             .withConfiguration(
                 AutoConfigurations.of(
-                    SecurityAutoConfiguration.class,
-                    TodayBookSecurityAutoConfiguration.class,
-                    MessageResolverAutoConfiguration.class,
-                    TodayBookSecurityErrorAutoConfiguration.class))
+                    SecurityAutoConfiguration.class, TodayBookSecurityAutoConfiguration.class))
             .withUserConfiguration(TestInfraConfig.class)
             .withPropertyValues("todaybook.security.mvc.enabled=true");
   }
 
   @Test
-  @DisplayName("enabled=true 이면 TodayBook SecurityFilterChain과 LoginFilter가 자동 등록된다")
-  void registersSecurityFilterChainAndLoginFilter_whenEnabled() {
+  @DisplayName("enabled=true 이면 SecurityFilterChain과 LoginFilter가 자동 등록된다")
+  void registersSecurityBeans_whenEnabled() {
     contextRunner.run(
         context -> {
           assertThat(context).hasSingleBean(LoginFilter.class);
+          assertThat(context).hasSingleBean(SecurityFilterChain.class);
           assertThat(context).hasBean("todayBookSecurityFilterChain");
-        });
-  }
-
-  @Test
-  @DisplayName("PropertyValues가 없으면 TodayBook Security 자동 구성은 적용되지 않는다")
-  void doesNotRegisterSecurityBeans_withoutPropertyValues() {
-    contextRunner =
-        new WebApplicationContextRunner()
-            .withConfiguration(
-                AutoConfigurations.of(
-                    TodayBookSecurityAutoConfiguration.class, SecurityAutoConfiguration.class));
-    contextRunner.run(
-        context -> {
-          assertThat(context).doesNotHaveBean(LoginFilter.class);
-          assertThat(context).doesNotHaveBean("todayBookSecurityFilterChain");
         });
   }
 
   @Test
   @DisplayName("enabled=false 이면 TodayBook Security 자동 구성은 적용되지 않는다")
   void doesNotRegisterSecurityBeans_whenDisabled() {
-    contextRunner
+    new WebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(TodayBookSecurityAutoConfiguration.class))
+        .withUserConfiguration(TestInfraConfig.class)
         .withPropertyValues("todaybook.security.mvc.enabled=false")
         .run(
             context -> {
               assertThat(context).doesNotHaveBean(LoginFilter.class);
-              assertThat(context).doesNotHaveBean("todayBookSecurityFilterChain");
+              assertThat(context).doesNotHaveBean(SecurityFilterChain.class);
             });
   }
 
   @Test
-  @DisplayName("사용자가 SecurityFilterChain을 정의하면 TodayBook 자동 구성은 백오프된다")
-  void backsOffAutoConfiguration_whenCustomSecurityFilterChainExists() {
+  @DisplayName("Property가 없으면 TodayBook Security 자동 구성은 적용되지 않는다")
+  void doesNotRegisterSecurityBeans_withoutProperty() {
+    new WebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(TodayBookSecurityAutoConfiguration.class))
+        .withUserConfiguration(TestInfraConfig.class)
+        .run(
+            context -> {
+              assertThat(context).doesNotHaveBean(LoginFilter.class);
+              assertThat(context).doesNotHaveBean(SecurityFilterChain.class);
+            });
+  }
+
+  @Test
+  @DisplayName("사용자가 SecurityFilterChain을 정의하면 자동 구성은 백오프된다")
+  void backsOff_whenCustomSecurityFilterChainExists() {
     contextRunner
-        .withUserConfiguration(CustomSecurityFilterChainConfig.class)
+        .withBean(SecurityFilterChain.class, CustomSecurityFilterChain::new)
         .run(
             context -> {
               assertThat(context).hasSingleBean(SecurityFilterChain.class);
-              assertThat(context.getBean(SecurityFilterChain.class))
-                  .isInstanceOf(CustomSecurityFilterChain.class);
-
               assertThat(context).doesNotHaveBean("todayBookSecurityFilterChain");
             });
   }
 
   @Test
-  @DisplayName("사용자가 LoginFilter를 정의하면 기본 LoginFilter는 자동 등록되지 않는다")
+  @DisplayName("사용자가 LoginFilter를 정의하면 기본 LoginFilter는 등록되지 않는다")
   void backsOffDefaultLoginFilter_whenCustomLoginFilterExists() {
     contextRunner
-        .withUserConfiguration(CustomLoginFilterConfig.class)
+        .withBean(LoginFilter.class, CustomLoginFilter::new)
         .run(
             context -> {
               assertThat(context).hasSingleBean(LoginFilter.class);
               assertThat(context.getBean(LoginFilter.class)).isInstanceOf(CustomLoginFilter.class);
 
-              // SecurityFilterChain은 여전히 TodayBook 자동 구성으로 등록됨
               assertThat(context).hasBean("todayBookSecurityFilterChain");
             });
   }
 
-  @Configuration
-  static class CustomSecurityFilterChainConfig {
-
-    @Bean
-    public SecurityFilterChain customChain() {
-      return new CustomSecurityFilterChain();
-    }
-  }
-
-  @Configuration
-  static class CustomLoginFilterConfig {
-
-    @Bean
-    public LoginFilter loginFilter() {
-      return new CustomLoginFilter();
-    }
-  }
-
   static class CustomSecurityFilterChain implements SecurityFilterChain {
-
     @Override
     public boolean matches(HttpServletRequest request) {
       return true;
@@ -151,6 +135,16 @@ class TodayBookSecurityAutoConfigurationTest {
     @Bean
     MessageSource messageSource() {
       return new StaticMessageSource();
+    }
+
+    @Bean
+    MessageResolver messageResolver() {
+      return new MessageSourceResolver(messageSource());
+    }
+
+    @Bean
+    SecurityErrorResponseWriter securityErrorResponseWriter() {
+      return new SecurityErrorResponseWriter(objectMapper(), messageResolver());
     }
   }
 }
