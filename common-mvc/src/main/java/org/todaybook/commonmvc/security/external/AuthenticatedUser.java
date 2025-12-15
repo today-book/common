@@ -1,6 +1,7 @@
 package org.todaybook.commonmvc.security.external;
 
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * 인증이 완료된 사용자를 표현하는 Security 도메인용 Principal 객체입니다.
@@ -26,7 +27,7 @@ import java.util.Set;
  * @author 김지원
  * @since 1.0.0
  */
-public record AuthenticatedUser(Long userId, String nickname, Set<Role> roles) {
+public record AuthenticatedUser(UUID userId, String nickname, Set<Role> roles) {
 
   /**
    * Compact Constructor.
