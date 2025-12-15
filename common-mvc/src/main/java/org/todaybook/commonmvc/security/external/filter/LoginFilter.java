@@ -52,6 +52,18 @@ public class LoginFilter extends OncePerRequestFilter {
   private static final String HEADER_USER_ROLES = "X-User-Roles";
 
   /**
+   * 내부 서비스 간 호출 전용 경로(/internal/**)에 대해서는 Gateway 인증 헤더 기반 {@link LoginFilter} 적용을 생략합니다.
+   *
+   * <p>/internal/** 엔드포인트는 네트워크 레벨에서 이미 신뢰된 요청이라는 전제 하에 사용되므로, 외부 클라이언트 인증을 위한 LoginFilter를 통과시키지
+   * 않습니다.
+   */
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) {
+    String uri = request.getRequestURI();
+    return uri.startsWith("/internal/");
+  }
+
+  /**
    * 요청당 한 번 실행되는 필터 진입점입니다.
    *
    * <p>이미 인증된 요청인 경우 인증 로직을 수행하지 않고 그대로 다음 필터로 전달합니다. 인증되지 않은 요청에 대해서만 Gateway Header 기반 인증을 시도합니다.

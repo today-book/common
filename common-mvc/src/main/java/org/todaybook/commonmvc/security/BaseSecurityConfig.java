@@ -188,11 +188,15 @@ public abstract class BaseSecurityConfig {
   }
 
   /**
-   * 내부용 API 경로에 대해 인증 없이 허용할 Matcher 목록을 반환한다.
+   * 내부용 API 경로에 대해 인증/인가를 단순화하기 위한 Matcher 목록을 반환한다.
    *
-   * <p>해당 경로는 Gateway, 배치, 내부 서비스 간 호출 등 신뢰된 네트워크 환경에서 접근되는 엔드포인트를 대상으로 한다.
+   * <p>해당 경로는 Gateway, 배치, 내부 서비스 간 호출 등 VPC 내부의 신뢰된 네트워크 환경에서만 접근되는 엔드포인트를 대상으로 한다.
    *
-   * <p>기본적으로 {@code /internal/**} 경로를 인증 없이 허용하며, 필요 시 하위 클래스에서 오버라이드하여 정책을 변경하거나 비활성화할 수 있다.
+   * <p>기본적으로 {@code /internal/**} 경로를 인증 없이 허용하며, {@link
+   * LoginFilter#shouldNotFilter(jakarta.servlet.http.HttpServletRequest)} 와 함께 내부 호출이 인증 필터 및 인가
+   * 단계에서 모두 차단되지 않도록 하는 이중 안전장치로 동작한다.
+   *
+   * <p>내부 호출을 애플리케이션 레벨에서 보호해야 하는 경우, 이 설정을 제거하거나 하위 클래스에서 오버라이드하여 정책을 변경할 수 있다.
    *
    * @return internal API permitAll 대상 {@link RequestMatcher} 배열
    * @author 김지원
