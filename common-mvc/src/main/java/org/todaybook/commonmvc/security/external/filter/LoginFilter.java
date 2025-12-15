@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
@@ -121,7 +122,7 @@ public class LoginFilter extends OncePerRequestFilter {
    * @return 인증된 {@link AuthenticatedUser}
    */
   private AuthenticatedUser authenticateUser(HttpServletRequest request) {
-    Long userId = parseUserId(request.getHeader(HEADER_USER_ID));
+    UUID userId = parseUserId(request.getHeader(HEADER_USER_ID));
     if (userId == null) {
       throw new AuthenticationCredentialsNotFoundException(
           "Invalid USER authentication from gateway");
@@ -144,18 +145,21 @@ public class LoginFilter extends OncePerRequestFilter {
   }
 
   /**
-   * 사용자 ID 문자열을 {@link Long} 타입으로 변환합니다.
+   * 사용자 ID 문자열을 {@link UUID} 타입으로 변환합니다.
+   *
+   * <p>값이 비어있거나 UUID 형식이 아닌 경우 {@code null}을 반환합니다.
    *
    * @param userId 사용자 ID 문자열
-   * @return 변환된 사용자 ID, 변환 실패 시 {@code null}
+   * @return 변환된 사용자 ID(UUID), 변환 실패 시 {@code null}
    */
-  private Long parseUserId(String userId) {
+  private UUID parseUserId(String userId) {
     if (!StringUtils.hasText(userId)) {
       return null;
     }
+
     try {
-      return Long.parseLong(userId);
-    } catch (NumberFormatException e) {
+      return UUID.fromString(userId);
+    } catch (IllegalArgumentException e) {
       return null;
     }
   }

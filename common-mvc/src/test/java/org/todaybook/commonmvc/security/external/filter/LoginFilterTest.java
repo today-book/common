@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -66,7 +67,7 @@ class LoginFilterTest {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("X-Gateway-Trusted", "true");
     request.addHeader("X-Client-Type", "USER");
-    request.addHeader("X-User-Id", "12345");
+    request.addHeader("X-User-Id", "3f7c9a2e-9c6e-4b1f-8c2e-6a4c5d9b1e72");
     request.addHeader("X-User-Nickname", "김지원");
     request.addHeader("X-User-Roles", "ROLE_ADMIN,ROLE_USER");
 
@@ -76,7 +77,7 @@ class LoginFilterTest {
     assertThat(auth).isNotNull();
 
     AuthenticatedUser user = (AuthenticatedUser) auth.getPrincipal();
-    assertThat(user.userId()).isEqualTo(12345L);
+    assertThat(user.userId()).isEqualTo(UUID.fromString("3f7c9a2e-9c6e-4b1f-8c2e-6a4c5d9b1e72"));
     assertThat(user.nickname()).isEqualTo("김지원");
     assertThat(user.roles()).isEqualTo(Set.of(Role.USER, Role.ADMIN));
   }
