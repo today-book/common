@@ -4,47 +4,40 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
 import org.todaybook.commoncore.message.MessageResolver;
-import org.todaybook.commonmvc.autoconfig.condition.NoRestControllerAdviceCondition;
 import org.todaybook.commonmvc.error.MvcExceptionHandler;
 
 /**
- * MVC 환경에서 사용할 기본 {@link MvcExceptionHandler} 와 메시지 처리기({@link MessageResolver})를 자동으로 등록하는
- * AutoConfiguration.
+ * {@code MvcExceptionHandler}를 Spring MVC 환경에 자동으로 등록하는 AutoConfiguration 클래스.
  *
- * <p>이 구성은 다음 조건을 모두 충족할 때만 활성화된다:
+ * <p>이 설정은 다음 조건을 만족할 때만 활성화된다:
  *
  * <ul>
- *   <li>현재 애플리케이션이 Servlet 기반 Web MVC 환경일 것
- *   <li><code>todaybook.exception.mvc.enabled=true</code> 이거나 설정이 없을 것
- *   <li>사용자가 직접 <code>@RestControllerAdvice</code> 기반 글로벌 예외 처리기를 등록하지 않았을 것
- *   <li>{@link MvcExceptionHandler} 또는 {@link MessageResolver} 빈이 이미 존재하지 않을 것
+ *   <li>Servlet 기반 Spring MVC 애플리케이션인 경우
+ *   <li>{@code todaybook.exception.mvc.enabled=true} 인 경우 (설정이 없으면 기본적으로 활성화됨)
  * </ul>
  *
- * <p>즉, Spring Boot의 “기본 제공(Default) / 사용자 정의 우선(Override)” 원칙을 따라, 필요한 경우에만 기본 예외 처리기와 메시지 해석기를
- * 자동으로 제공한다.
- *
- * @author 김지원
- * @since 0.2.0
+ * <p>사용자가 직접 {@code MvcExceptionHandler} Bean을 정의한 경우, 해당 Bean을 우선 사용하며 본 자동 설정은 적용되지 않는다.
  */
 @AutoConfiguration
-@Conditional(NoRestControllerAdviceCondition.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+@EnableConfigurationProperties(MvcExceptionHandlerProperties.class)
 @ConditionalOnProperty(
     prefix = "todaybook.exception.mvc",
     name = "enabled",
     havingValue = "true",
     matchIfMissing = true)
 public class MvcExceptionHandlerAutoConfiguration {
+
   /**
-   * 기본 MVC 예외 처리기를 등록한다.
+   * 기본 {@link MvcExceptionHandler} Bean을 등록한다.
    *
-   * <p>사용자가 직접 {@link MvcExceptionHandler} 빈을 정의한 경우 이 빈은 생성되지 않으며, 사용자 정의 구현이 우선 적용된다.
+   * <p>이미 {@link MvcExceptionHandler} 타입의 Bean이 존재하는 경우, 사용자 정의 Bean을 우선하기 위해 본 Bean은 등록되지 않는다.
    *
-   * @param messageResolver 메시지 코드 해석기
-   * @return 라이브러리에서 제공하는 기본 {@link MvcExceptionHandler}
+   * @param messageResolver 에러 메시지 코드 해석 및 다국어 메시지 변환을 담당하는 {@link MessageResolver}
+   * @return 기본 {@link MvcExceptionHandler} 인스턴스
    */
   @Bean
   @ConditionalOnMissingBean(MvcExceptionHandler.class)
