@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.todaybook.commonmvc.security.external.AuthenticatedUser;
@@ -35,6 +37,9 @@ import org.todaybook.commonmvc.security.external.Role;
  * @since 1.0.0
  */
 public class LoginFilter extends OncePerRequestFilter {
+
+  private static final RequestMatcher INTERNAL_REQUEST_MATCHER =
+      PathPatternRequestMatcher.withDefaults().matcher("/internal/**");
 
   /** Gateway에서 전달하는 신뢰 여부 헤더 키. */
   private static final String HEADER_GATEWAY_TRUSTED = "X-Gateway-Trusted";
@@ -59,8 +64,7 @@ public class LoginFilter extends OncePerRequestFilter {
    */
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
-    String uri = request.getRequestURI();
-    return uri.startsWith("/internal/");
+    return INTERNAL_REQUEST_MATCHER.matches(request);
   }
 
   /**

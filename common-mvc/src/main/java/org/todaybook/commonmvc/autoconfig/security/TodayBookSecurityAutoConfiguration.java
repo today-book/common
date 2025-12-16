@@ -2,57 +2,55 @@ package org.todaybook.commonmvc.autoconfig.security;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.todaybook.commonmvc.security.BaseSecurityConfig;
 import org.todaybook.commonmvc.security.SecurityErrorResponseWriter;
 import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
 /**
- * Spring Boot 자동 구성 기반으로 기본 보안 설정을 제공하는 Auto-Configuration 클래스.
+ * TodayBook 공통 MVC 보안 설정을 자동으로 등록하는 Auto-Configuration 클래스다.
  *
- * <p>이 클래스는 {@link BaseSecurityConfig}를 확장하여 최소한의 기본 Security 구성을 자동으로 적용합니다. 애플리케이션이 별도의 {@link
- * SecurityFilterChain} 빈을 정의하지 않은 경우에만 활성화되며, Servlet 기반 WebApplication 환경에서 조건적으로 등록됩니다.
+ * <h2>이 클래스의 책임</h2>
  *
- * <h2>기능 및 역할</h2>
- *
- * <ul>
- *   <li>기본 {@link LoginFilter} 빈 자동 등록
- *   <li>사용자 정의 보안 설정(SecurityFilterChain)이 없는 경우 기본 보안 정책 자동 적용
- *   <li>{@link BaseSecurityConfig#build(HttpSecurity)} 를 활용한 공통 보안 설정 구성
- *   <li>{@link EnableMethodSecurity}를 통해 메서드 기반 보안(@PreAuthorize 등) 기본 활성화 <br>
- *       ※ 사용자가 별도 SecurityConfig에서 @EnableMethodSecurity를 적용하면 해당 설정이 우선됩니다.
- * </ul>
- *
- * <h2>Auto-Configuration 적용 조건</h2>
+ * <p>이 클래스는 <b>보안 정책을 정의하지 않는다</b>. 대신 다음 책임만을 가진다.
  *
  * <ul>
- *   <li>{@link SecurityFilterChain} 클래스 존재 시 적용
- *   <li>사용자가 {@link SecurityFilterChain} 빈을 정의하지 않은 경우에만 적용
- *   <li>Servlet 기반 WebApplication일 경우에 한해 활성화
+ *   <li>공통 SecurityFilterChain을 언제, 어떤 조건에서 등록할지 결정
+ *   <li>여러 SecurityFilterChain 간의 실행 순서(Order) 조정
+ *   <li>기본 구현(LoginFilter 등)을 제공하되, 사용자 정의 구현이 있으면 즉시 양보
  * </ul>
  *
- * <p>사용자는 별도의 SecurityConfig를 정의하면 자동 구성은 비활성화되며, 원하는 방식으로 보안 설정을 완전히 변경할 수 있습니다.
+ * <p>실제 보안 정책(인증 방식, 인가 규칙, 예외 처리 로직)은 {@link BaseSecurityConfig}에 위임한다.
  *
- * <p>또한 필요할 경우 {@link BaseSecurityConfig}의 확장 지점 (예: {@link
- * BaseSecurityConfig#authorizeHttpRequests()}, {@link
- * BaseSecurityConfig#exceptionHandlingCustomizer()})을 override하여 접근 제어 정책이나 예외 처리 등을 세부적으로 재정의할 수
- * 있습니다.
+ * <h2>설계 원칙</h2>
  *
- * @author 김형섭
- * @since 0.4.0
+ * <ul>
+ *   <li>전역(anyRequest) 보안을 제공하지 않는다
+ *   <li>API 성격의 요청(/api, /public, /internal)만 대상으로 한다
+ *   <li>Spring Boot 기본 Security 설정과 공존 가능해야 한다
+ * </ul>
+ *
+ * <p>이를 통해 공통 라이브러리가 애플리케이션 보안 구성을 침범하지 않도록 한다.
+ *
+ * @author 김지원
  */
-@AutoConfiguration(before = SecurityAutoConfiguration.class)
+@AutoConfiguration(after = SecurityAutoConfiguration.class)
 @EnableMethodSecurity
 @ConditionalOnClass(SecurityFilterChain.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+@EnableConfigurationProperties(TodayBookSecurityProperties.class)
 @ConditionalOnProperty(
     prefix = "todaybook.security.mvc",
     name = "enabled",
@@ -61,23 +59,26 @@ import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
 
   /**
-   * LoginFilter를 지연 조회하기 위한 Provider.
+   * LoginFilter를 지연 조회하기 위한 Provider다.
    *
-   * <p>Auto-Configuration 내부에서 @ConditionalOnMissingBean으로 정의된 LoginFilter와 사용자 정의 LoginFilter 중 실제
-   * 사용될 Bean을 순환 참조 없이 안전하게 선택하기 위해 ObjectProvider를 사용한다.
+   * <p>공통 라이브러리는 기본 LoginFilter를 제공하지만, 사용자가 직접 LoginFilter를 정의한 경우 그 구현을 우선 사용해야 한다.
+   *
+   * <p>{@link ObjectProvider}를 사용함으로써
+   *
+   * <ul>
+   *   <li>순환 참조를 방지하고
+   *   <li>Auto-Configuration 초기화 순서에 의존하지 않으며
+   *   <li>실제 사용 시점에 어떤 구현을 쓸지 결정
+   * </ul>
+   *
+   * 할 수 있다.
    */
   private final ObjectProvider<LoginFilter> loginFilterProvider;
 
   /**
-   * TodayBook Security 자동 구성 클래스의 생성자.
+   * 공통 보안 자동 설정 생성자다.
    *
-   * <p>{@link SecurityErrorResponseWriter}는 상위 {@link BaseSecurityConfig}에서 공통 예외 응답 처리를 위해 사용되며,
-   * {@link LoginFilter}는 {@link ObjectProvider}를 통해 지연 주입된다.
-   *
-   * @param errorResponseWriter Security 예외 응답을 JSON 형태로 작성하는 Writer
-   * @param loginFilterProvider LoginFilter 지연 조회용 Provider
-   * @author 김지원
-   * @since 1.0.0
+   * <p>{@link SecurityErrorResponseWriter}는 인증/인가 실패 응답을 공통 포맷으로 통일하기 위해 상위 설정에 전달된다.
    */
   public TodayBookSecurityAutoConfiguration(
       SecurityErrorResponseWriter errorResponseWriter,
@@ -87,11 +88,11 @@ public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
   }
 
   /**
-   * 기본 인증 필터인 {@link LoginFilter} 빈을 정의합니다.
+   * 기본 {@link LoginFilter} 구현을 제공한다.
    *
-   * <p>{@link ConditionalOnMissingBean}을 사용하기 때문에 사용자가 동일한 타입의 빈을 정의하면 이 빈은 생성되지 않습니다.
+   * <p>이 빈은 "기본값" 역할만 한다. 사용자가 LoginFilter를 직접 정의하면 즉시 대체된다.
    *
-   * @return 기본 {@link LoginFilter} 인스턴스
+   * <p>공통 라이브러리는 인증 방식의 주도권을 절대 가져가지 않는다.
    */
   @Bean
   @ConditionalOnMissingBean(LoginFilter.class)
@@ -100,12 +101,16 @@ public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
   }
 
   /**
-   * {@link BaseSecurityConfig}에서 요구하는 로그인 필터를 반환합니다.
+   * {@link BaseSecurityConfig}가 요구하는 인증 필터를 제공한다.
    *
-   * <p>상위 클래스는 loginFilterBean()을 통해 필터 체인 구성 시 로그인 필터를 가져가므로, 기본적으로 여기서는 자동 구성된 {@link
-   * #loginFilter()}를 반환합니다.
+   * <p>실제로 어떤 LoginFilter가 선택될지는
    *
-   * @return 자동 구성된 {@link LoginFilter} 빈
+   * <ul>
+   *   <li>사용자 정의 LoginFilter
+   *   <li>기본 LoginFilter
+   * </ul>
+   *
+   * 중 하나이며, 이 선택은 런타임에 결정된다.
    */
   @Override
   protected LoginFilter loginFilterBean() {
@@ -113,18 +118,76 @@ public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
   }
 
   /**
-   * 애플리케이션 기본 보안 필터 체인을 구성하여 빈으로 등록합니다.
+   * TodayBook API 영역에 적용될 SecurityFilterChain을 등록한다.
    *
-   * <p>이 빈은 사용자가 별도로 {@link SecurityFilterChain} 빈을 제공하지 않았을 때만 등록됩니다. 보안 체인의 내용은 {@link
-   * BaseSecurityConfig#build(HttpSecurity)}에서 정의한 공통 정책(Stateless, CSRF 비활성화, 필터 등록 등)에 의해 구성됩니다.
+   * <p>이 체인은 다음 요청에만 적용된다.
    *
-   * @param http {@link HttpSecurity} 보안 구성 객체
-   * @return 기본 {@link SecurityFilterChain}
-   * @throws Exception 보안 구성 중 발생할 수 있는 예외
+   * <ul>
+   *   <li>/api/**
+   *   <li>/public/**
+   *   <li>/internal/**
+   * </ul>
+   *
+   * <h3>Order(0)를 사용하는 이유</h3>
+   *
+   * <p>Spring Boot 기본 SecurityFilterChain은 anyRequest(/**)를 매칭한다. 이 체인이 먼저 평가되면, 본 체인은 절대 실행되지 않는다.
+   *
+   * <p>따라서 API 체인은 반드시 기본 체인보다 먼저 평가되어야 한다.
    */
-  @Bean
-  @ConditionalOnMissingBean(SecurityFilterChain.class)
+  @Bean(name = "todayBookSecurityFilterChain")
+  @Order(0)
+  @ConditionalOnBean(LoginFilter.class)
+  @ConditionalOnMissingBean(name = "todayBookSecurityFilterChain")
   public SecurityFilterChain todayBookSecurityFilterChain(HttpSecurity http) throws Exception {
-    return build(http);
+    return configureSecurityFilterChain(http);
+  }
+
+  /**
+   * Swagger/OpenAPI 문서 접근을 위한 전용 SecurityFilterChain이다.
+   *
+   * <p>문서 엔드포인트는 인증/인가 대상이 아니며, LoginFilter나 다른 인증 필터가 절대 개입해서는 안 된다.
+   *
+   * <p>따라서 별도의 체인으로 분리하여,
+   *
+   * <ul>
+   *   <li>CSRF, CORS 비활성화
+   *   <li>모든 요청 permitAll
+   * </ul>
+   *
+   * 로 단순하게 처리한다.
+   *
+   * <p>Order(1)을 사용해 API 체인 다음에 평가되도록 한다.
+   */
+  @Bean(name = "todayBookDocsSecurityFilterChain")
+  @Order(1)
+  @ConditionalOnMissingBean(name = "todayBookDocsSecurityFilterChain")
+  public SecurityFilterChain todayBookDocsSecurityFilterChain(HttpSecurity http) throws Exception {
+    http.securityMatcher(docsSecurityMatcher())
+        .csrf(CsrfConfigurer::disable)
+        .cors(AbstractHttpConfigurer::disable)
+        .authorizeHttpRequests(reg -> reg.anyRequest().permitAll());
+    return http.build();
+  }
+
+  /**
+   * 문서 요청에만 매칭되는 RequestMatcher를 생성한다.
+   *
+   * <p>이 matcher에 매칭되는 요청은 API 보안 체인으로 절대 전달되지 않는다.
+   */
+  private RequestMatcher docsSecurityMatcher() {
+    return new OrRequestMatcher(docsPermitAllRequestMatchers());
+  }
+
+  /**
+   * 인증 없이 접근 가능한 문서 엔드포인트 목록이다.
+   *
+   * <p>필요 시 향후 확장(예: Redoc 등)을 고려해 배열 형태로 유지한다.
+   */
+  private RequestMatcher[] docsPermitAllRequestMatchers() {
+    return new RequestMatcher[] {
+      PathPatternRequestMatcher.withDefaults().matcher("/v3/api-docs/**"),
+      PathPatternRequestMatcher.withDefaults().matcher("/swagger-ui/**"),
+      PathPatternRequestMatcher.withDefaults().matcher("/swagger-ui.html")
+    };
   }
 }
