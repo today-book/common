@@ -135,7 +135,7 @@ public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
    * <p>따라서 API 체인은 반드시 기본 체인보다 먼저 평가되어야 한다.
    */
   @Bean(name = "todayBookSecurityFilterChain")
-  @Order(0)
+  @Order(1)
   @ConditionalOnBean(LoginFilter.class)
   @ConditionalOnMissingBean(name = "todayBookSecurityFilterChain")
   public SecurityFilterChain todayBookSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -159,7 +159,7 @@ public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
    * <p>Order(1)을 사용해 API 체인 다음에 평가되도록 한다.
    */
   @Bean(name = "todayBookDocsSecurityFilterChain")
-  @Order(1)
+  @Order(0)
   @ConditionalOnMissingBean(name = "todayBookDocsSecurityFilterChain")
   public SecurityFilterChain todayBookDocsSecurityFilterChain(HttpSecurity http) throws Exception {
     http.securityMatcher(docsSecurityMatcher())
