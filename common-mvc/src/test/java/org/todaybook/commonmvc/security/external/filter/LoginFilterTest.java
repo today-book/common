@@ -3,6 +3,8 @@ package org.todaybook.commonmvc.security.external.filter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +42,38 @@ class LoginFilterTest {
         .isInstanceOf(AuthenticationCredentialsNotFoundException.class);
 
     assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+  }
+
+  @Test
+  @DisplayName("/internal/** 요청은 LoginFilter를 스킵한다 (헤더 없어도 예외 없음)")
+  void skipFilter_forInternalPath() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/internal/v1/users");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    class CountingFilterChain extends MockFilterChain {
+      int called = 0;
+
+      @Override
+      public void doFilter(ServletRequest req, ServletResponse res) {
+        called++;
+      }
+    }
+
+    CountingFilterChain chain = new CountingFilterChain();
+    loginFilter.doFilter(request, response, chain);
+
+    assertThat(chain.called).isEqualTo(1);
+    assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+  }
+
+  @Test
+  @DisplayName("PUBLIC 요청은 userId 없이 인증됨")
+  void internalRequest() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/internal/v1/users");
+
+    boolean result = loginFilter.shouldNotFilter(request);
+
+    assertThat(result).isTrue();
   }
 
   @Test

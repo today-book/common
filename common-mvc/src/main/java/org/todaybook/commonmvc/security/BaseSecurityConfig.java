@@ -14,119 +14,85 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.todaybook.commonmvc.error.GlobalErrorCode;
 import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
 /**
- * 공통적으로 적용할 Spring Security 보안 설정의 기반 클래스.
+ * 공통 Spring Security 설정을 제공하는 기반 클래스입니다.
  *
- * <p>이 클래스는 템플릿 메서드 패턴(Template Method Pattern)을 기반으로 설계되어 있으며, 하위 보안 설정 클래스가 공통적인 필터 체인 구성 로직은 그대로
- * 사용하면서, 특정 지점(예: 로그인 필터 정의, 엔드포인트 접근 정책, 예외 처리)을 필요에 따라 확장할 수 있도록 한다.
+ * <p>이 클래스의 목적은 “모든 요청을 통제”하는 것이 아니라, <b>공통으로 반복되는 보안 구성의 기준선(baseline)을 제공</b>하는 데 있습니다.
  *
- * <h2>핵심 목적</h2>
- *
- * <ul>
- *   <li>Stateless 기반 JWT 인증 구조를 간단히 구성하기 위한 공통 보안 설정 제공
- *   <li>사용자 정의 {@link LoginFilter}를 필터 체인에 등록하기 위한 확장 포인트 제공
- *   <li>401(UNAUTHORIZED), 403(FORBIDDEN) 등 인증/인가 실패 상황에 대한 기본 예외 처리 제공
- *   <li>세션을 사용하지 않는 REST API 환경에 적합한 기본 정책 제공
- * </ul>
- *
- * <h2>확장 방식</h2>
- *
- * <p>하위 클래스는 반드시 {@link #loginFilterBean()}을 구현하여 실제 인증 로직을 수행할 커스텀 {@link LoginFilter} 인스턴스를 제공해야
- * 한다.
- *
- * <p>아래 메서드는 필요에 따라 재정의할 수 있다:
+ * <p>실제 인증 방식(JWT, 세션, 헤더 등)이나 접근 정책의 세부 내용은 서비스마다 다를 수 있으므로, 이 클래스는 다음 책임만 가집니다.
  *
  * <ul>
- *   <li>{@link #authorizeHttpRequests()} — 엔드포인트별 접근 제어 정책
- *   <li>{@link #exceptionHandlingCustomizer()} — 인증/인가 예외 처리 정책
- *   <li>{@link #authenticationEntryPoint()} — 인증 실패(401) 처리
- *   <li>{@link #accessDeniedHandler()} — 권한 부족(403) 처리
+ *   <li>보안 필터 체인이 적용될 요청 범위 정의
+ *   <li>Stateless API 환경에 적합한 기본 Security 옵션 구성
+ *   <li>커스텀 {@link LoginFilter}를 안전한 위치에 삽입
+ *   <li>401 / 403 응답을 공통 포맷으로 일관되게 처리
  * </ul>
  *
- * <h2>기본 제공 기능</h2>
+ * <p>정책 변경이 필요한 지점은 protected 메서드로 분리하여, 하위 클래스에서 의도를 명확히 드러내며 확장할 수 있도록 설계되어 있습니다.
  *
- * <ul>
- *   <li>CSRF 비활성화
- *   <li>세션 생성 정책을 {@link SessionCreationPolicy#STATELESS}로 설정
- *   <li>하위 클래스에서 제공한 {@link LoginFilter}를 {@link UsernamePasswordAuthenticationFilter} 이전에 필터 체인에
- *       삽입
- *   <li>기본적으로 모든 요청에 대해 인증 요구 (하위 클래스의 {@link #authorizeHttpRequests()} 재정의로 변경 가능)
- *   <li>401/403 상황에 대한 기본적인 HTTP 상태 코드 응답 처리
- * </ul>
- *
- * <h2>사용 예시</h2>
- *
- * <pre>{@code
- * @Configuration
- * public class CustomSecurityConfig extends BaseSecurityConfig {
- *     @Override
- *     protected LoginFilter loginFilterBean() {
- *         return new CustomLoginFilter(...);
- *     }
- *
- *     @Override
- *     protected Customizer<AuthorizeHttpRequestsConfigurer<HttpSecurity>
- *             .AuthorizationManagerRequestMatcherRegistry> authorizeHttpRequests() {
- *         return registry -> registry
- *             .requestMatchers("/public/**").permitAll()
- *             .anyRequest().authenticated();
- *     }
- * }
- * }</pre>
- *
- * <p>이 클래스를 상속하면 프로젝트 전반에서 일관된 보안 정책을 쉽게 유지할 수 있으며, 필요한 부분만 선택적으로 확장할 수 있다.
- *
- * @author 김형섭
- * @since 0.4.0
+ * <p><b>중요:</b> 이 클래스는 공통 라이브러리 용도로 사용되므로, {@code securityMatcher("/**")} 처럼 전체 요청을 잡지 않고 명시적으로 API
+ * 성격의 경로만 대상으로 삼습니다.
  */
 @Slf4j
 @RequiredArgsConstructor
 public abstract class BaseSecurityConfig {
 
   /**
-   * 로그인(인증) 처리를 담당하는 커스텀 {@link LoginFilter} 빈을 반환합니다.
+   * 이 SecurityFilterChain이 적용될 요청 범위를 정의합니다.
    *
-   * <p>하위 클래스는 이 메서드를 구현하여 실제 인증 로직을 수행하는 {@link LoginFilter} 인스턴스를 반환해야 합니다. 반환된 필터는 {@link
-   * UsernamePasswordAuthenticationFilter} 앞에 등록됩니다.
+   * <p>공통 라이브러리가 모든 요청을 가로채면 애플리케이션에서 정의한 추가 SecurityFilterChain과 충돌하기 쉽기 때문에, 실제 인증/인가가 필요한 API
+   * 성격의 경로만 대상으로 제한합니다.
    *
-   * @return 인증 처리를 담당하는 {@link LoginFilter} 인스턴스
+   * <p>필요 시 하위 클래스에서 이 메서드를 오버라이드하여 적용 범위를 명확하게 조정할 수 있습니다.
+   */
+  protected RequestMatcher apiSecurityMatcher() {
+    return new OrRequestMatcher(
+        PathPatternRequestMatcher.withDefaults().matcher("/api/**"),
+        PathPatternRequestMatcher.withDefaults().matcher("/public/**"),
+        PathPatternRequestMatcher.withDefaults().matcher("/internal/**"));
+  }
+
+  /**
+   * 인증 처리를 담당하는 커스텀 {@link LoginFilter}를 반환합니다.
+   *
+   * <p>공통 설정에서는 “어떤 인증을 한다”보다 “인증 필터를 언제 실행할 것인가”만 책임집니다.
+   *
+   * <p>따라서 실제 인증 로직(JWT 검증, 사용자 조회 등)은 반드시 하위 클래스에서 구현하도록 강제합니다.
+   *
+   * <p>반환된 필터는 {@link UsernamePasswordAuthenticationFilter} 이전에 등록되며, 인가 단계 전에 인증 컨텍스트를 구성하는 역할을
+   * 합니다.
    */
   protected abstract LoginFilter loginFilterBean();
 
   /**
-   * 인증/인가 실패(401, 403) 시 공통 에러 응답을 작성하는 Security 전용 writer.
+   * 인증/인가 실패 시 공통 에러 응답을 작성하는 전용 writer입니다.
    *
-   * <p>GlobalErrorCode와 ErrorResponse 정책을 일관되게 적용하기 위해 BaseSecurityConfig에서 직접 주입받아 사용합니다.
-   *
-   * @since 1.1.0
+   * <p>401 / 403 응답의 포맷이 서비스마다 달라지면 프론트엔드 또는 다른 서비스에서의 공통 처리 로직이 깨질 수 있으므로, 공통 라이브러리 레벨에서 응답 형식을
+   * 고정합니다.
    */
   private final SecurityErrorResponseWriter errorResponseWriter;
 
   /**
-   * {@link HttpSecurity}를 사용하여 {@link SecurityFilterChain}을 구성하고 빌드합니다.
+   * 공통 SecurityFilterChain을 구성합니다.
    *
-   * <p>기본 구성은 다음을 포함합니다:
+   * <p>이 체인은 다음 전제를 기반으로 설계되었습니다.
    *
    * <ul>
-   *   <li>CSRF 비활성화
-   *   <li>하위 클래스가 제공한 {@link LoginFilter}를 {@link UsernamePasswordAuthenticationFilter} 전에 등록
-   *   <li>세션 생성 정책을 {@link SessionCreationPolicy#STATELESS}로 설정
-   *   <li>인증/인가 관련 커스터마이저( {@link #authorizeHttpRequests()}, {@link #exceptionHandlingCustomizer()}
-   *       ) 적용
+   *   <li>REST API 환경이며 서버 세션을 사용하지 않는다
+   *   <li>인증은 커스텀 {@link LoginFilter}에서 처리한다
+   *   <li>기본 보안 옵션은 모든 서비스에서 동일해야 한다
    * </ul>
    *
-   * <p>필요 시 하위 클래스에서 구성 메서드들을 오버라이드하여 정책을 변경할 수 있습니다.
-   *
-   * @param http {@link HttpSecurity} 구성 객체
-   * @return 구성된 {@link SecurityFilterChain}
-   * @throws Exception Spring Security 구성 중 발생할 수 있는 예외
+   * <p>보안 정책의 “내용”이 아닌, “구조와 실행 순서”를 고정하는 역할을 합니다.
    */
-  public SecurityFilterChain build(HttpSecurity http) throws Exception {
-    http.csrf(CsrfConfigurer::disable)
+  public SecurityFilterChain configureSecurityFilterChain(HttpSecurity http) throws Exception {
+    http.securityMatcher(apiSecurityMatcher())
+        .csrf(CsrfConfigurer::disable)
         .cors(AbstractHttpConfigurer::disable)
         .addFilterBefore(loginFilterBean(), UsernamePasswordAuthenticationFilter.class)
         .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -139,16 +105,18 @@ public abstract class BaseSecurityConfig {
   }
 
   /**
-   * HTTP 요청별 인가(Authorization) 규칙을 정의한다.
+   * 인가(Authorization) 정책의 기본 구현입니다.
    *
-   * <p>기본적으로 모든 요청은 인증(authenticated)을 요구하지만, {@link #defaultPermitAllRequestMatchers()} 에 정의된 경로는
-   * 예외적으로 인증 없이 접근을 허용한다.
+   * <p>기본 정책은 다음과 같습니다.
    *
-   * <p>주로 Swagger, API 문서, 헬스 체크 등 인증이 필요 없는 공용 엔드포인트를 열어두기 위해 사용된다.
+   * <ul>
+   *   <li>내부 호출용 엔드포인트는 인증을 생략한다
+   *   <li>그 외 모든 요청은 인증이 필요하다
+   * </ul>
    *
-   * @return 인가 규칙을 설정하는 {@link Customizer}
-   * @author 김지원
-   * @since 1.0.0
+   * <p>내부 호출은 보통 VPC, Gateway, 네트워크 레벨에서 보호된다는 전제를 두고 단순화합니다.
+   *
+   * <p>단, 이 정책은 보안 요구사항에 따라 하위 클래스에서 반드시 재정의할 수 있도록 열어둡니다.
    */
   protected Customizer<
           AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry>
@@ -156,63 +124,28 @@ public abstract class BaseSecurityConfig {
 
     return registry ->
         registry
-            // 기본적으로 허용할 엔드포인트는 인증 없이 접근 가능
-            .requestMatchers(defaultPermitAllRequestMatchers())
+            .requestMatchers(permitAllRequestMatchers())
             .permitAll()
-
-            // "/internal/**" 경로는 Security 레벨 인증을 생략 (네트워크 레벨 보호 전제)
-            .requestMatchers(internalPermitAllRequestMatchers())
-            .permitAll()
-
-            // 그 외 모든 요청은 인증을 반드시 요구함
             .anyRequest()
             .authenticated();
   }
 
   /**
-   * 인증 없이 허용할 기본 경로 Matcher 목록을 반환한다.
+   * 인증 없이 접근을 허용할 경로 목록을 정의합니다.
    *
-   * <p>Spring MVC 환경에 의존하지 않는 {@link PathPatternRequestMatcher}를 사용하여 테스트/경량 컨텍스트에서도 안정적으로 동작하도록
-   * 구성한다.
+   * <p>이 메서드는 “인가 단계”에서의 예외 규칙만 담당합니다. 실제로 인증 필터가 이 경로를 스킵하는지는 {@link LoginFilter#shouldNotFilter}
+   * 구현에 의해 보장되어야 합니다.
    *
-   * @return permitAll 대상 {@link RequestMatcher} 배열
-   * @author 김지원
-   * @since 1.0.0
+   * <p>즉, 이 메서드와 LoginFilter의 스킵 로직은 함께 동작할 때 내부 호출이 안전하게 보장됩니다.
    */
-  protected RequestMatcher[] defaultPermitAllRequestMatchers() {
-    return new RequestMatcher[] {
-      PathPatternRequestMatcher.withDefaults().matcher("/v3/api-docs/**"),
-      PathPatternRequestMatcher.withDefaults().matcher("/swagger-ui/**"),
-      PathPatternRequestMatcher.withDefaults().matcher("/swagger-ui.html")
-    };
-  }
-
-  /**
-   * 내부용 API 경로에 대해 인증/인가를 단순화하기 위한 Matcher 목록을 반환한다.
-   *
-   * <p>해당 경로는 Gateway, 배치, 내부 서비스 간 호출 등 VPC 내부의 신뢰된 네트워크 환경에서만 접근되는 엔드포인트를 대상으로 한다.
-   *
-   * <p>기본적으로 {@code /internal/**} 경로를 인증 없이 허용하며, {@link
-   * LoginFilter#shouldNotFilter(jakarta.servlet.http.HttpServletRequest)} 와 함께 내부 호출이 인증 필터 및 인가
-   * 단계에서 모두 차단되지 않도록 하는 이중 안전장치로 동작한다.
-   *
-   * <p>내부 호출을 애플리케이션 레벨에서 보호해야 하는 경우, 이 설정을 제거하거나 하위 클래스에서 오버라이드하여 정책을 변경할 수 있다.
-   *
-   * @return internal API permitAll 대상 {@link RequestMatcher} 배열
-   * @author 김지원
-   * @since 1.0.0
-   */
-  protected RequestMatcher[] internalPermitAllRequestMatchers() {
+  protected RequestMatcher[] permitAllRequestMatchers() {
     return new RequestMatcher[] {PathPatternRequestMatcher.withDefaults().matcher("/internal/**")};
   }
 
   /**
-   * 인증/인가 예외 처리(예: 401, 403) 동작을 커스터마이즈할 {@link Customizer}를 반환합니다.
+   * 인증/인가 예외 처리 구성을 반환합니다.
    *
-   * <p>기본 구현은 {@link #authenticationEntryPoint()}와 {@link #accessDeniedHandler()}를 사용하여 인증 실패 및 접근
-   * 거부 상황에 대해 기본 응답을 지정합니다. 예외 처리 로직을 변경하려면 이 메서드를 오버라이드하세요.
-   *
-   * @return {@link ExceptionHandlingConfigurer} 구성을 위한 {@link Customizer}
+   * <p>이 지점을 분리한 이유는, 서비스별로 로깅 전략이나 응답 정책을 선택적으로 바꾸고 싶을 수 있기 때문입니다.
    */
   protected Customizer<ExceptionHandlingConfigurer<HttpSecurity>> exceptionHandlingCustomizer() {
     return handler -> {
@@ -222,13 +155,9 @@ public abstract class BaseSecurityConfig {
   }
 
   /**
-   * 인증이 필요한 요청에서 인증이 되어있지 않을 때 호출되는 {@link AuthenticationEntryPoint}를 반환합니다.
+   * 인증되지 않은 요청(401)에 대한 공통 처리 로직입니다.
    *
-   * <p>기본 구현은 {@link GlobalErrorCode#UNAUTHORIZED} 에 해당하는 공통 에러 응답을 반환합니다.
-   *
-   * <p>인증 실패 응답 형식이나 로깅 전략을 변경하려면 하위 클래스에서 이 메서드를 오버라이드할 수 있습니다.
-   *
-   * @return 인증 실패 시 동작할 {@link AuthenticationEntryPoint}
+   * <p>보안 예외는 로그에는 남기되, 클라이언트에는 내부 구현이 노출되지 않도록 표준 에러 코드만 반환합니다.
    */
   protected AuthenticationEntryPoint authenticationEntryPoint() {
     return (req, res, e) -> {
@@ -238,18 +167,13 @@ public abstract class BaseSecurityConfig {
   }
 
   /**
-   * 인증은 되었지만 권한이 부족한 요청(접근 거부)에 대해 처리할 {@link AccessDeniedHandler}를 반환합니다.
+   * 인증은 되었으나 권한이 부족한 경우(403)에 대한 처리입니다.
    *
-   * <p>기본 구현은 {@link GlobalErrorCode#FORBIDDEN} 에 해당하는 공통 에러 응답을 반환합니다.
-   *
-   * <p>권한 부족 응답 정책을 커스터마이즈하려면 하위 클래스에서 이 메서드를 오버라이드할 수 있습니다.
-   *
-   * @return 접근 거부 시 동작할 {@link AccessDeniedHandler}
+   * <p>권한 정책은 서비스별로 달라질 수 있으므로, 응답 포맷만 공통으로 고정하고 세부 정책은 상위 레이어에서 관리하도록 합니다.
    */
   protected AccessDeniedHandler accessDeniedHandler() {
     return (req, res, e) -> {
       log.warn("FORBIDDEN {}: {}", e.getClass().getSimpleName(), e.getMessage());
-
       errorResponseWriter.write(res, GlobalErrorCode.FORBIDDEN);
     };
   }
