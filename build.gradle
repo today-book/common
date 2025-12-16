@@ -7,7 +7,7 @@ plugins {
 
 allprojects {
     group = 'org.todaybook'
-    version = '1.3.2'
+    version = '1.3.3'
     description = 'org.todaybook.common'
 }
 

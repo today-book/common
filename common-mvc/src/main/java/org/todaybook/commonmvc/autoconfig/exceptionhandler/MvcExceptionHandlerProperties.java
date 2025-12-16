@@ -1,8 +1,10 @@
 package org.todaybook.commonmvc.autoconfig.exceptionhandler;
 
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "todaybook.exception")
-public record MvcExceptionHandlerProperties(Mvc mvc) {
-  public record Mvc(boolean enabled) {}
+@Data
+@ConfigurationProperties(prefix = "todaybook.exception.mvc")
+public class MvcExceptionHandlerProperties {
+  private boolean enabled = true;
 }
