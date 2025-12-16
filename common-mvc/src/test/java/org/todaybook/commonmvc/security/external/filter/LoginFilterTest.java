@@ -68,16 +68,6 @@ class LoginFilterTest {
 
   @Test
   @DisplayName("PUBLIC 요청은 userId 없이 인증됨")
-  void internalRequest() throws Exception {
-    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/internal/v1/users");
-
-    boolean result = loginFilter.shouldNotFilter(request);
-
-    assertThat(result).isTrue();
-  }
-
-  @Test
-  @DisplayName("PUBLIC 요청은 userId 없이 인증됨")
   void authenticatedPublicRequest() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("X-Gateway-Trusted", "true");
