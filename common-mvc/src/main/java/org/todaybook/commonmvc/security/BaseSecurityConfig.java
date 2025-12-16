@@ -16,6 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.util.Assert;
 import org.todaybook.commonmvc.error.GlobalErrorCode;
 import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
@@ -91,10 +92,13 @@ public abstract class BaseSecurityConfig {
    * <p>보안 정책의 “내용”이 아닌, “구조와 실행 순서”를 고정하는 역할을 합니다.
    */
   public SecurityFilterChain configureSecurityFilterChain(HttpSecurity http) throws Exception {
+    LoginFilter loginFilter = loginFilterBean();
+    Assert.notNull(loginFilter, "LoginFilter bean is required but was not provided.");
+
     http.securityMatcher(apiSecurityMatcher())
         .csrf(CsrfConfigurer::disable)
         .cors(AbstractHttpConfigurer::disable)
-        .addFilterBefore(loginFilterBean(), UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(loginFilter, UsernamePasswordAuthenticationFilter.class)
         .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)
