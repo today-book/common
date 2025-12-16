@@ -20,31 +20,25 @@ import org.todaybook.commonmvc.security.SecurityErrorResponseWriter;
 import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 
 /**
- * TodayBook 공통 MVC 보안 설정을 자동으로 등록하는 Auto-Configuration 클래스다.
+ * TodayBook Spring MVC 환경을 위한 Spring Security 자동 설정 클래스.
  *
- * <h2>이 클래스의 책임</h2>
- *
- * <p>이 클래스는 <b>보안 정책을 정의하지 않는다</b>. 대신 다음 책임만을 가진다.
+ * <p>이 AutoConfiguration은 다음 조건을 만족할 때 활성화된다:
  *
  * <ul>
- *   <li>공통 SecurityFilterChain을 언제, 어떤 조건에서 등록할지 결정
- *   <li>여러 SecurityFilterChain 간의 실행 순서(Order) 조정
- *   <li>기본 구현(LoginFilter 등)을 제공하되, 사용자 정의 구현이 있으면 즉시 양보
+ *   <li>Servlet 기반 Spring MVC 애플리케이션
+ *   <li>Spring Security가 classpath에 존재
+ *   <li>{@code todaybook.security.mvc.enabled=true} 설정이 명시된 경우
  * </ul>
  *
- * <p>실제 보안 정책(인증 방식, 인가 규칙, 예외 처리 로직)은 {@link BaseSecurityConfig}에 위임한다.
+ * <p>본 설정은 {@link SecurityAutoConfiguration} 이후에 적용되며, TodayBook 서비스에 필요한 보안 구성을 추가로 확장한다.
  *
- * <h2>설계 원칙</h2>
+ * <p>구성 내용:
  *
  * <ul>
- *   <li>전역(anyRequest) 보안을 제공하지 않는다
- *   <li>API 성격의 요청(/api, /public, /internal)만 대상으로 한다
- *   <li>Spring Boot 기본 Security 설정과 공존 가능해야 한다
+ *   <li>API 요청을 처리하는 기본 {@link SecurityFilterChain}
+ *   <li>Swagger / OpenAPI 문서 접근을 위한 PermitAll 전용 {@link SecurityFilterChain}
+ *   <li>{@link LoginFilter}를 확장 포인트로 제공
  * </ul>
- *
- * <p>이를 통해 공통 라이브러리가 애플리케이션 보안 구성을 침범하지 않도록 한다.
- *
- * @author 김지원
  */
 @AutoConfiguration(after = SecurityAutoConfiguration.class)
 @EnableMethodSecurity
@@ -59,26 +53,17 @@ import org.todaybook.commonmvc.security.external.filter.LoginFilter;
 public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
 
   /**
-   * LoginFilter를 지연 조회하기 위한 Provider다.
+   * {@link LoginFilter}를 지연 조회하기 위한 {@link ObjectProvider}.
    *
-   * <p>공통 라이브러리는 기본 LoginFilter를 제공하지만, 사용자가 직접 LoginFilter를 정의한 경우 그 구현을 우선 사용해야 한다.
-   *
-   * <p>{@link ObjectProvider}를 사용함으로써
-   *
-   * <ul>
-   *   <li>순환 참조를 방지하고
-   *   <li>Auto-Configuration 초기화 순서에 의존하지 않으며
-   *   <li>실제 사용 시점에 어떤 구현을 쓸지 결정
-   * </ul>
-   *
-   * 할 수 있다.
+   * <p>사용자가 직접 {@link LoginFilter} Bean을 정의한 경우, 해당 Bean을 우선적으로 사용하기 위해 Provider를 사용한다.
    */
   private final ObjectProvider<LoginFilter> loginFilterProvider;
 
   /**
-   * 공통 보안 자동 설정 생성자다.
+   * TodayBook Security 자동 설정 생성자.
    *
-   * <p>{@link SecurityErrorResponseWriter}는 인증/인가 실패 응답을 공통 포맷으로 통일하기 위해 상위 설정에 전달된다.
+   * @param errorResponseWriter 인증/인가 실패 시 공통 에러 응답을 작성하는 컴포넌트
+   * @param loginFilterProvider {@link LoginFilter} 확장 포인트 Provider
    */
   public TodayBookSecurityAutoConfiguration(
       SecurityErrorResponseWriter errorResponseWriter,
@@ -88,11 +73,11 @@ public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
   }
 
   /**
-   * 기본 {@link LoginFilter} 구현을 제공한다.
+   * 기본 {@link LoginFilter} Bean을 등록한다.
    *
-   * <p>이 빈은 "기본값" 역할만 한다. 사용자가 LoginFilter를 직접 정의하면 즉시 대체된다.
+   * <p>사용자가 {@link LoginFilter}를 직접 정의하지 않은 경우에만 기본 구현체가 자동으로 등록된다.
    *
-   * <p>공통 라이브러리는 인증 방식의 주도권을 절대 가져가지 않는다.
+   * @return 기본 {@link LoginFilter} 인스턴스
    */
   @Bean
   @ConditionalOnMissingBean(LoginFilter.class)
@@ -101,41 +86,30 @@ public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
   }
 
   /**
-   * {@link BaseSecurityConfig}가 요구하는 인증 필터를 제공한다.
+   * {@link BaseSecurityConfig}에서 사용할 {@link LoginFilter}를 제공한다.
    *
-   * <p>실제로 어떤 LoginFilter가 선택될지는
+   * <p>사용자 정의 {@link LoginFilter}가 존재하면 해당 Bean을 반환하며, 없을 경우 기본 {@link LoginFilter}가 사용된다.
    *
-   * <ul>
-   *   <li>사용자 정의 LoginFilter
-   *   <li>기본 LoginFilter
-   * </ul>
-   *
-   * 중 하나이며, 이 선택은 런타임에 결정된다.
+   * @return 사용 가능한 {@link LoginFilter} (없을 경우 {@code null})
    */
   @Override
   protected LoginFilter loginFilterBean() {
-    return loginFilterProvider.getObject();
+    return loginFilterProvider.getIfAvailable();
   }
 
   /**
-   * TodayBook API 영역에 적용될 SecurityFilterChain을 등록한다.
+   * TodayBook API 요청을 처리하는 기본 {@link SecurityFilterChain}.
    *
-   * <p>이 체인은 다음 요청에만 적용된다.
+   * <p>대부분의 API 요청을 처리하는 보안 체인으로, {@link LoginFilter}가 존재하는 경우에만 등록된다.
    *
-   * <ul>
-   *   <li>/api/**
-   *   <li>/public/**
-   *   <li>/internal/**
-   * </ul>
+   * <p>Docs 전용 FilterChain보다 낮은 우선순위({@code @Order(0)})로 적용되어, 문서 요청은 먼저 Docs FilterChain에서 처리된다.
    *
-   * <h3>Order(0)를 사용하는 이유</h3>
-   *
-   * <p>Spring Boot 기본 SecurityFilterChain은 anyRequest(/**)를 매칭한다. 이 체인이 먼저 평가되면, 본 체인은 절대 실행되지 않는다.
-   *
-   * <p>따라서 API 체인은 반드시 기본 체인보다 먼저 평가되어야 한다.
+   * @param http {@link HttpSecurity}
+   * @return 구성된 API {@link SecurityFilterChain}
+   * @throws Exception 보안 설정 중 발생할 수 있는 예외
    */
   @Bean(name = "todayBookSecurityFilterChain")
-  @Order(1)
+  @Order(0)
   @ConditionalOnBean(LoginFilter.class)
   @ConditionalOnMissingBean(name = "todayBookSecurityFilterChain")
   public SecurityFilterChain todayBookSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -143,23 +117,19 @@ public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
   }
 
   /**
-   * Swagger/OpenAPI 문서 접근을 위한 전용 SecurityFilterChain이다.
+   * Swagger 및 OpenAPI 문서 접근을 위한 PermitAll {@link SecurityFilterChain}.
    *
-   * <p>문서 엔드포인트는 인증/인가 대상이 아니며, LoginFilter나 다른 인증 필터가 절대 개입해서는 안 된다.
+   * <p>문서 관련 요청은 인증/인가 없이 접근 가능해야 하므로, API 보안 FilterChain보다 높은 우선순위({@code @Order(-1)})로 먼저 매칭되도록
+   * 구성된다.
    *
-   * <p>따라서 별도의 체인으로 분리하여,
+   * <p>이 FilterChain은 문서 요청에만 적용되며, 실제 API 요청에는 영향을 주지 않는다.
    *
-   * <ul>
-   *   <li>CSRF, CORS 비활성화
-   *   <li>모든 요청 permitAll
-   * </ul>
-   *
-   * 로 단순하게 처리한다.
-   *
-   * <p>Order(1)을 사용해 API 체인 다음에 평가되도록 한다.
+   * @param http {@link HttpSecurity}
+   * @return Docs 전용 {@link SecurityFilterChain}
+   * @throws Exception 보안 설정 중 발생할 수 있는 예외
    */
   @Bean(name = "todayBookDocsSecurityFilterChain")
-  @Order(0)
+  @Order(-1)
   @ConditionalOnMissingBean(name = "todayBookDocsSecurityFilterChain")
   public SecurityFilterChain todayBookDocsSecurityFilterChain(HttpSecurity http) throws Exception {
     http.securityMatcher(docsSecurityMatcher())
@@ -170,18 +140,18 @@ public class TodayBookSecurityAutoConfiguration extends BaseSecurityConfig {
   }
 
   /**
-   * 문서 요청에만 매칭되는 RequestMatcher를 생성한다.
+   * Swagger / OpenAPI 문서 요청에 매칭되는 {@link RequestMatcher}를 생성한다.
    *
-   * <p>이 matcher에 매칭되는 요청은 API 보안 체인으로 절대 전달되지 않는다.
+   * @return Docs 요청 전용 {@link RequestMatcher}
    */
   private RequestMatcher docsSecurityMatcher() {
     return new OrRequestMatcher(docsPermitAllRequestMatchers());
   }
 
   /**
-   * 인증 없이 접근 가능한 문서 엔드포인트 목록이다.
+   * 인증 없이 접근을 허용할 문서 관련 URL 패턴 목록.
    *
-   * <p>필요 시 향후 확장(예: Redoc 등)을 고려해 배열 형태로 유지한다.
+   * @return Docs PermitAll {@link RequestMatcher} 배열
    */
   private RequestMatcher[] docsPermitAllRequestMatchers() {
     return new RequestMatcher[] {
