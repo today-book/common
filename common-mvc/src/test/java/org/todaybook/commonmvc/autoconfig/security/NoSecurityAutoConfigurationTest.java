@@ -1,4 +1,4 @@
-package org.todaybook.commonmvc.autoconfig;
+package org.todaybook.commonmvc.autoconfig.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
-import org.todaybook.commonmvc.autoconfig.security.NoSecurityAutoConfiguration;
 
 class NoSecurityAutoConfigurationTest {
 
@@ -28,10 +27,7 @@ class NoSecurityAutoConfigurationTest {
   void registersNoOpSecurityFilterChain_whenSecurityDisabled() {
     contextRunner
         .withPropertyValues("todaybook.security.mvc.enabled=false")
-        .run(
-            context -> {
-              assertThat(context).hasBean("noOpSecurityFilterChain");
-            });
+        .run(context -> assertThat(context).hasBean("noOpSecurityFilterChain"));
   }
 
   @Test
@@ -39,18 +35,12 @@ class NoSecurityAutoConfigurationTest {
   void doesNotRegisterNoOpSecurityFilterChain_whenSecurityEnabled() {
     contextRunner
         .withPropertyValues("todaybook.security.mvc.enabled=true")
-        .run(
-            context -> {
-              assertThat(context).doesNotHaveBean("noOpSecurityFilterChain");
-            });
+        .run(context -> assertThat(context).doesNotHaveBean("noOpSecurityFilterChain"));
   }
 
   @Test
   @DisplayName("보안 설정 값이 없으면 No-Op SecurityFilterChain이 기본으로 등록된다")
   void registersNoOpSecurityFilterChain_whenPropertyIsMissing() {
-    contextRunner.run(
-        context -> {
-          assertThat(context).hasBean("noOpSecurityFilterChain");
-        });
+    contextRunner.run(context -> assertThat(context).hasBean("noOpSecurityFilterChain"));
   }
 }

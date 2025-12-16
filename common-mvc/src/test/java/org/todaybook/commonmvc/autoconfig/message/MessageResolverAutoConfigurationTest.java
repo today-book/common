@@ -1,4 +1,4 @@
-package org.todaybook.commonmvc.autoconfig;
+package org.todaybook.commonmvc.autoconfig.message;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -12,7 +12,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.StaticMessageSource;
 import org.todaybook.commoncore.message.MessageResolver;
-import org.todaybook.commonmvc.autoconfig.message.MessageResolverAutoConfiguration;
 import org.todaybook.commonmvc.message.MessageSourceResolver;
 
 /** MessageResolverAutoConfiguration Test. */
