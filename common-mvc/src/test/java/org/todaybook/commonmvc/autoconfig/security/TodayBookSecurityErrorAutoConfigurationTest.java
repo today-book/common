@@ -1,4 +1,4 @@
-package org.todaybook.commonmvc.autoconfig;
+package org.todaybook.commonmvc.autoconfig.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.StaticMessageSource;
 import org.todaybook.commoncore.message.MessageResolver;
 import org.todaybook.commonmvc.autoconfig.message.MessageResolverAutoConfiguration;
-import org.todaybook.commonmvc.autoconfig.security.TodayBookSecurityErrorAutoConfiguration;
 import org.todaybook.commonmvc.message.MessageSourceResolver;
 import org.todaybook.commonmvc.security.SecurityErrorResponseWriter;
 
@@ -35,9 +34,7 @@ class TodayBookSecurityErrorAutoConfigurationTest {
   @DisplayName("enabled=true 이면 SecurityErrorResponseWriter가 자동 등록된다")
   void registersSecurityErrorResponseWriter_whenEnabled() {
     contextRunner.run(
-        context -> {
-          assertThat(context).hasSingleBean(SecurityErrorResponseWriter.class);
-        });
+        context -> assertThat(context).hasSingleBean(SecurityErrorResponseWriter.class));
   }
 
   @Test
@@ -52,9 +49,7 @@ class TodayBookSecurityErrorAutoConfigurationTest {
             .withUserConfiguration(TestInfraConfig.class);
 
     contextRunner.run(
-        context -> {
-          assertThat(context).doesNotHaveBean(SecurityErrorResponseWriter.class);
-        });
+        context -> assertThat(context).doesNotHaveBean(SecurityErrorResponseWriter.class));
   }
 
   @Configuration
